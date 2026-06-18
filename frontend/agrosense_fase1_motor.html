@@ -33,8 +33,8 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
 .gps-chip{cursor:pointer;background:#1e3a5f22;color:#93c5fd;border-color:#1d4ed866}
 .gps-chip.live{color:#bfdbfe;border-color:#3b82f6;background:#1d4ed833}
 
-	.main{display:grid;grid-template-columns:minmax(0,80%);justify-content:center;gap:0;height:calc(100vh - 57px)}
-	.main.results-open{grid-template-columns:1fr 1.4fr}
+	.main{display:grid;grid-template-columns:60% 1fr;gap:0;height:calc(100vh - 57px)}
+	.main.results-open{grid-template-columns:60% 1fr}
 	@media(max-width:800px){.main,.main.results-open{grid-template-columns:1fr;height:auto}}
 
 /* PANEL IZQUIERDO */
@@ -117,8 +117,7 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
 .zchip strong{color:var(--lime)}
 
 /* PANEL DERECHO */
-	.right-panel{display:none;overflow-y:auto;background:var(--bg)}
-	.main.results-open .right-panel{display:block}
+	.right-panel{display:block;overflow-y:auto;background:var(--bg);border-left:1px solid var(--border)}
 .right-panel::-webkit-scrollbar{width:4px}
 .right-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
