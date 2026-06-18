@@ -20,7 +20,10 @@ const JWT_SECRET = process.env.JWT_SECRET || "agrosense-local-dev-secret-change-
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 const app = express();
-app.use(cors({ origin: process.env.FRONTEND_URL || true, credentials: true }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : true,
+  credentials: true
+}));
 app.use(express.json({ limit: "2mb" }));
 app.use(morgan("dev"));
 app.use(express.static(path.join(PROJECT_ROOT, "frontend")));

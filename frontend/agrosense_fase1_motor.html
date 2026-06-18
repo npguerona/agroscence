@@ -502,6 +502,10 @@ const PROGRESS_STEPS = [
 let progressRoot=null;
 let progressSteps=PROGRESS_STEPS.map(step=>({...step,status:"pending"}));
 
+const RAILWAY_URL = "https://agroscence-production.up.railway.app";
+const API_BASE = (window.location.hostname === "localhost" || window.location.protocol === "file:")
+  ? ""
+  : RAILWAY_URL;
 const APIS = {
   geocoding: "https://geocoding-api.open-meteo.com/v1/search",
   forecast:  "https://api.open-meteo.com/v1/forecast",
@@ -1464,7 +1468,7 @@ async function runAnalysis(){
 
   try{
     // Una sola llamada al orquestador — toda la lógica vive en el backend
-    const resp=await fetch("/api/v2/analysis/zone",{
+    const resp=await fetch(`${API_BASE}/api/v2/analysis/zone`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({lat:selLat,lng:selLng,zona:selNombre,area_ha:selArea||0})
@@ -1684,7 +1688,7 @@ async function doSaveAuth(){
   if(!email||!pass){errEl.textContent="Completa email y contraseña.";errEl.style.display="block";return;}
   btn.disabled=true; btn.textContent="...";
   try{
-    const path=_saveAuthMode==="register"?"/api/v2/auth/register":"/api/v2/auth/login";
+    const path=_saveAuthMode==="register"?`${API_BASE}/api/v2/auth/register`:`${API_BASE}/api/v2/auth/login`;
     const body=_saveAuthMode==="register"?{nombre,email,password:pass}:{email,password:pass};
     const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     const d=await r.json();
@@ -1783,7 +1787,7 @@ async function doSaveParcela(){
 
   try{
     // 1. Crear parcela
-    const pR=await fetch("/api/v2/parcelas",{method:"POST",headers,
+    const pR=await fetch(`${API_BASE}/api/v2/parcelas`,{method:"POST",headers,
       body:JSON.stringify({nombre,lat:r.lat,lng:r.lng,altitud_m:r.altitud??null,area_ha:r.area_ha??null})});
     const pD=await pR.json();
     if(!pD.ok) throw new Error(pD.error||"Error al crear parcela");
@@ -1798,7 +1802,7 @@ async function doSaveParcela(){
         d.setMonth(d.getMonth()+durMeses);
         return d.toISOString().slice(0,10);
       })();
-      const cR=await fetch("/api/v2/ciclos",{method:"POST",headers,
+      const cR=await fetch(`${API_BASE}/api/v2/ciclos`,{method:"POST",headers,
         body:JSON.stringify({
           parcela_id:parcela.id,
           cultivo_id:cultivoId,

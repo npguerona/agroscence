@@ -724,7 +724,10 @@ tr:hover td{background:var(--bg3)}
 
 <script>
 // ── ESTADO GLOBAL ──────────────────────────────────────────────
-const API_BASE = window.location.protocol === "file:" ? "http://localhost:3000/api/v2" : "/api/v2";
+const RAILWAY_URL = "https://agroscence-production.up.railway.app";
+const API_BASE = (window.location.hostname === "localhost" || window.location.protocol === "file:")
+  ? "http://localhost:3000/api/v2"
+  : `${RAILWAY_URL}/api/v2`;
 let authToken  = localStorage.getItem("agrosense_token") || null;
 let currentUser= JSON.parse(localStorage.getItem("agrosense_user") || "null");
 let state = { parcelas:[], ciclos:[], alertas:[], bitacora:[], flujo:[], fauna:[], material:[] };
