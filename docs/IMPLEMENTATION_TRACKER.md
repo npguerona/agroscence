@@ -107,6 +107,7 @@ Se considera completa cuando:
 
 ## Historial
 
+- 2026-06-18: Medición geográfica estabilizada en Motor Fase 1 y portada SaaS. El trazado conserva el tamaño del mapa y muestra hectáreas, m² y perímetro sin desplazar la vista entre vértices. Validado en navegador y con `npm run test:apis`.
 - 2026-06-17: Supabase integrado como capa híbrida — db.js con entidades (users, parcelas, ciclos, bitacora, flujo, alertas, material, fauna, analisis). Usa Supabase si SUPABASE_URL+SUPABASE_SERVICE_KEY están en .env, JSON local como fallback. Schema en 002_supabase_schema.sql.
 - 2026-06-17: Modal "Guardar parcela" añadido al Motor Fase 1 — crea parcela + ciclo opcional vía API usando el token del Dashboard.
 - 2026-06-17: Frontend adaptado — runAnalysis reemplazado por llamada única al orquestador; normalizeContractCrop mapea contrato v1 al render. rain.meses añadido al agente de clima.

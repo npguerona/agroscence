@@ -270,8 +270,10 @@ footer{border-top:1px solid var(--border);padding:24px 32px;display:flex;justify
   <div class="area-info" id="areaInfo" style="display:none">
     <div class="area-chip">📍 Lat <span id="infoLat">—</span></div>
     <div class="area-chip">📍 Lng <span id="infoLng">—</span></div>
-    <div class="area-chip">📐 Área <span id="infoArea">—</span></div>
-    <div class="area-chip">🏔 Alt estimada <span id="infoAlt">calculando...</span></div>
+    <div class="area-chip">📐 <span id="infoArea">—</span></div>
+    <div class="area-chip" id="chipM2" style="display:none">📏 <span id="infoM2">—</span> m²</div>
+    <div class="area-chip" id="chipPerimeter" style="display:none">⬡ <span id="infoPerimeter">—</span> m perímetro</div>
+    <div class="area-chip">🏔 <span id="infoAlt">calculando...</span></div>
   </div>
 
   <div id="alertBox"></div>
@@ -468,7 +470,7 @@ function placePinAt(lat, lng) {
     .openPopup();
 
   selectedLat = lat; selectedLng = lng; selectedArea = 0;
-  updateAreaInfo(lat, lng, 0);
+  updateAreaInfo(lat, lng, { areaHa: 0, areaM2: 0, perimeterM: 0 });
   document.getElementById("analyzeBtn").style.display = "flex";
   document.getElementById("toolHint").textContent = "Punto colocado — haz clic en 'Analizar zona →'";
 }
@@ -478,39 +480,68 @@ function addPolyPoint(latlng) {
   if (polygon) map.removeLayer(polygon);
   if (polyPoints.length > 1) {
     polygon = L.polygon(polyPoints, { color:"#84cc16", weight:2, fillColor:"#84cc16", fillOpacity:0.15 }).addTo(map);
-    const area = L.GeometryUtil ? L.GeometryUtil.geodesicArea(polyPoints) / 10000 : estimateArea(polyPoints);
+    const m = calculateMeasurement(polyPoints);
     selectedLat = polyPoints.reduce((s,p)=>s+p.lat,0)/polyPoints.length;
     selectedLng = polyPoints.reduce((s,p)=>s+p.lng,0)/polyPoints.length;
-    selectedArea = area;
-    updateAreaInfo(selectedLat, selectedLng, area);
+    selectedArea = m.areaHa;
+    updateAreaInfo(selectedLat, selectedLng, m);
     document.getElementById("analyzeBtn").style.display = "flex";
-    document.getElementById("toolHint").textContent = `Polígono: ${polyPoints.length} puntos — doble clic para cerrar`;
+    const hint = polyPoints.length >= 3
+      ? `${polyPoints.length} pts · ${m.areaHa.toFixed(3)} ha · ${Math.round(m.perimeterM)} m — doble clic para cerrar`
+      : "Sigue haciendo clic para definir el área del ejido/predio";
+    document.getElementById("toolHint").textContent = hint;
   }
   if (polyPoints.length === 1) {
     document.getElementById("toolHint").textContent = "Sigue haciendo clic para definir el área del ejido/predio";
   }
 }
 
-function estimateArea(points) {
-  if (points.length < 3) return 0;
-  let area = 0;
-  for (let i = 0; i < points.length; i++) {
-    const j = (i + 1) % points.length;
-    area += points[i].lng * points[j].lat;
-    area -= points[j].lng * points[i].lat;
-  }
-  const deg2rad = Math.PI / 180;
-  const earthR = 6371000;
-  return Math.abs(area / 2) * deg2rad * deg2rad * earthR * earthR / 10000;
+function haversineMeters(a, b) {
+  const R = 6371008.8, toRad = v => v * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function updateAreaInfo(lat, lng, area) {
+function calculateMeasurement(points) {
+  if (points.length < 2) return { areaM2: 0, areaHa: 0, perimeterM: 0 };
+  const origin = points[0], lat0 = origin.lat * Math.PI / 180;
+  const proj = points.map(p => ({
+    x: (p.lng - origin.lng) * Math.PI / 180 * 6371008.8 * Math.cos(lat0),
+    y: (p.lat - origin.lat) * Math.PI / 180 * 6371008.8
+  }));
+  let twiceArea = 0;
+  if (points.length >= 3) {
+    for (let i = 0; i < proj.length; i++) {
+      const nx = proj[(i+1) % proj.length];
+      twiceArea += proj[i].x * nx.y - nx.x * proj[i].y;
+    }
+  }
+  let perimeter = 0;
+  for (let i = 1; i < points.length; i++) perimeter += haversineMeters(points[i-1], points[i]);
+  if (points.length >= 3) perimeter += haversineMeters(points[points.length-1], points[0]);
+  const areaM2 = Math.abs(twiceArea) / 2;
+  return { areaM2, areaHa: areaM2 / 10000, perimeterM: perimeter };
+}
+
+function updateAreaInfo(lat, lng, measurement) {
+  // measurement puede ser un número (área ha) o un objeto {areaHa, areaM2, perimeterM}
+  const m = (typeof measurement === 'object') ? measurement : { areaHa: measurement, areaM2: measurement * 10000, perimeterM: 0 };
   document.getElementById("areaInfo").style.display = "flex";
   document.getElementById("infoLat").textContent = lat.toFixed(5);
   document.getElementById("infoLng").textContent = lng.toFixed(5);
-  document.getElementById("infoArea").textContent = area > 0 ? `${area.toFixed(1)} ha` : "Punto";
+  if (m.areaHa > 0) {
+    document.getElementById("infoArea").textContent = `${m.areaHa.toFixed(3)} ha`;
+    document.getElementById("infoM2").textContent = Math.round(m.areaM2).toLocaleString("es-MX");
+    document.getElementById("chipM2").style.display = "flex";
+    document.getElementById("infoPerimeter").textContent = Math.round(m.perimeterM).toLocaleString("es-MX");
+    document.getElementById("chipPerimeter").style.display = "flex";
+  } else {
+    document.getElementById("infoArea").textContent = "Punto";
+    document.getElementById("chipM2").style.display = "none";
+    document.getElementById("chipPerimeter").style.display = "none";
+  }
   document.getElementById("infoAlt").textContent = "Calculando...";
-  // Estimate altitude via open-elevation concept (just show lat-based estimate)
   fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`)
     .then(r=>r.json()).then(d=>{
       const alt = d.elevation?.[0];
@@ -536,7 +567,10 @@ function setTool(tool, btn) {
 function finishPolygon(e) {
   L.DomEvent.stop(e);
   if (polyPoints.length >= 3) {
-    document.getElementById("toolHint").textContent = `Área delimitada: ${selectedArea.toFixed(1)} ha — haz clic en 'Analizar zona →'`;
+    const m = calculateMeasurement(polyPoints);
+    selectedArea = m.areaHa;
+    updateAreaInfo(selectedLat, selectedLng, m);
+    document.getElementById("toolHint").textContent = `✓ Área: ${m.areaHa.toFixed(3)} ha · ${Math.round(m.areaM2).toLocaleString("es-MX")} m² · ${Math.round(m.perimeterM).toLocaleString("es-MX")} m perímetro`;
     setTool("pin", document.getElementById("toolPin"));
   }
 }
@@ -546,6 +580,8 @@ function clearSelection() {
   if (polygon) { map.removeLayer(polygon); polygon = null; }
   polyPoints = []; selectedLat = null; selectedLng = null; selectedArea = 0;
   document.getElementById("areaInfo").style.display = "none";
+  document.getElementById("chipM2").style.display = "none";
+  document.getElementById("chipPerimeter").style.display = "none";
   document.getElementById("analyzeBtn").style.display = "none";
   document.getElementById("toolHint").textContent = "Haz clic en el mapa para seleccionar una zona de análisis";
   document.getElementById("appContent").innerHTML = "";

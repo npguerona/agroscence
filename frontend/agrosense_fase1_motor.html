@@ -787,12 +787,24 @@ let areaPoints=[], areaPolygon=null, areaMarkers=[];
 
 function setTool(t){
   currentTool=t;
+  const measurementPanel=document.getElementById("measurementPanel");
+  const zonaInfo=document.getElementById("zonaInfo");
   document.getElementById("toolPin").style.borderColor  = t==="pin" ?"var(--lime)":"var(--border)";
   document.getElementById("toolPoly").style.borderColor = t==="poly"?"var(--lime)":"var(--border)";
   document.getElementById("toolArea").style.borderColor = t==="area"?"var(--lime)":"var(--border)";
   const hints={pin:"Haz clic en el mapa para seleccionar un punto",poly:"Toca el mapa para agregar puntos numerados al perímetro.",area:"Clic para agregar vértices del predio — doble clic para cerrar el polígono"};
   document.getElementById("toolHint").textContent=hints[t]||hints.pin;
-  if(t==="poly") map.on("dblclick",e=>{L.DomEvent.stop(e);setTool("pin");});
+  if(t==="poly"){
+    measurementPanel.classList.add("on");
+    zonaInfo.style.display="flex";
+    updateMeasurement();
+    map.invalidateSize();
+    map.on("dblclick",e=>{L.DomEvent.stop(e);setTool("pin");});
+  }else if(!polyPoints.length){
+    measurementPanel.classList.remove("on");
+    if(selLat===null) zonaInfo.style.display="none";
+    map.invalidateSize();
+  }
   if(t==="area"){
     // Limpiar área anterior
     areaPoints=[];
@@ -846,9 +858,10 @@ function closeAreaPolygon(e){
     perim+=haversineMeters({lat:areaPoints[i][0],lng:areaPoints[i][1]},{lat:areaPoints[j][0],lng:areaPoints[j][1]});
   }
   document.getElementById("measurePerimeter").textContent=Math.round(perim).toLocaleString("es-MX");
+  document.getElementById("measurementPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
   // Pin en centroide
   placePin(lat,lng,selNombre||`Predio ${ha} ha`);
-  document.getElementById("toolHint").textContent=`✓ Polígono cerrado — ${ha} ha · Centroide colocado para análisis`;
+  document.getElementById("toolHint").textContent=`✓ Polígono cerrado — ${ha} ha · ${Math.round(ha*10000).toLocaleString("es-MX")} m² · ${Math.round(perim).toLocaleString("es-MX")} m perímetro`;
   setTool("pin");
 }
 
