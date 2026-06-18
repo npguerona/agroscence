@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agrosense.cyberbotlabs.io/contracts/analysis-result.schema.json",
+  "title": "AgroSense Analysis Result",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "analysis_id",
+    "generated_at",
+    "location",
+    "api_status",
+    "summary",
+    "climate",
+    "soil",
+    "recommended_crops",
+    "market",
+    "risks",
+    "actions",
+    "sources"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "analysis-result.v1"
+    },
+    "analysis_id": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "location": {
+      "type": "object",
+      "required": ["label", "lat", "lng"],
+      "properties": {
+        "label": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "altitude_m": { "type": ["number", "null"] },
+        "area_ha": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "api_status": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok", "warn", "error", "skipped"] },
+          "detail": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["headline", "recommendation", "confidence", "top_crop_id"],
+      "properties": {
+        "headline": { "type": "string" },
+        "recommendation": { "type": "string" },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "top_crop_id": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "climate": {
+      "type": "object",
+      "required": ["temp_avg_7d_c", "temp_min_7d_c", "rain_annual_mm", "rain_16d_mm", "frost_days_16d", "forecast_days"],
+      "properties": {
+        "temp_avg_7d_c": { "type": "number" },
+        "temp_min_7d_c": { "type": "number" },
+        "temp_max_7d_c": { "type": ["number", "null"] },
+        "rain_annual_mm": { "type": "number" },
+        "rain_16d_mm": { "type": "number" },
+        "frost_days_16d": { "type": "integer" },
+        "forecast_days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "tmax_c", "tmin_c", "rain_mm"],
+            "properties": {
+              "date": { "type": "string" },
+              "tmax_c": { "type": "number" },
+              "tmin_c": { "type": "number" },
+              "rain_mm": { "type": "number" },
+              "frost_risk": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "soil": {
+      "type": "object",
+      "required": ["available"],
+      "properties": {
+        "available": { "type": "boolean" },
+        "ph": { "type": ["number", "null"] },
+        "texture": { "type": ["string", "null"] },
+        "organic_matter_pct": { "type": ["number", "null"] },
+        "recommendations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "recommended_crops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "score", "level", "material_type", "fresh_price_mxn", "transformed_price_mxn", "alerts", "recommendations"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "emoji": { "type": "string" },
+          "score": { "type": "number" },
+          "level": { "type": "string", "enum": ["baja", "media", "alta"] },
+          "material_type": { "type": "string" },
+          "product": { "type": "string" },
+          "fresh_price_mxn": { "type": "number" },
+          "transformed_price_mxn": { "type": "number" },
+          "roi_multiplier": { "type": "number" },
+          "cycle_months": { "type": "number" },
+          "alerts": { "type": "array", "items": { "type": "string" } },
+          "recommendations": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "market": {
+      "type": "object",
+      "required": ["source", "opportunities"],
+      "properties": {
+        "source": { "type": "string" },
+        "recommendation": { "type": ["string", "null"] },
+        "market_alert": { "type": ["string", "null"] },
+        "saturated_crops": { "type": "array", "items": { "type": "string" } },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["crop", "reason", "price_mx", "competition", "market"],
+            "properties": {
+              "crop": { "type": "string" },
+              "reason": { "type": "string" },
+              "price_mx": { "type": "string" },
+              "competition": { "type": "string" },
+              "market": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "level", "message"],
+        "properties": {
+          "type": { "type": "string" },
+          "level": { "type": "string", "enum": ["info", "warning", "critical"] },
+          "message": { "type": "string" },
+          "action": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["priority", "label", "description"],
+        "properties": {
+          "priority": { "type": "integer" },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "target": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["ok", "warn", "error", "skipped"] },
+          "detail": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

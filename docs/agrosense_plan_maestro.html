@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AgroSense — Plan Maestro del Proyecto</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --soil:#1a0f0a;
+  --soil2:#231610;
+  --soil3:#2d1e15;
+  --soil4:#3a2718;
+  --bark:#5c3d1e;
+  --moss:#2d5a27;
+  --leaf:#4a7c40;
+  --lime:#84cc16;
+  --lime2:#a3e635;
+  --wheat:#d4a843;
+  --sun:#f59e0b;
+  --sky:#3b82f6;
+  --white:#faf7f2;
+  --cream:#f0ebe3;
+  --muted:#9a8878;
+  --faint:#5a4a3a;
+  --border:#3a2a1e;
+  --card:#231610;
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--soil);color:var(--white);font-family:var(--font);line-height:1.6}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--bark);border-radius:3px}
+
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(26,15,10,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;letter-spacing:-.01em}
+.nav-logo-dot{width:26px;height:26px;background:var(--lime);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.nav-logo-sub{font-size:9px;color:var(--lime);text-transform:uppercase;letter-spacing:.08em;margin-top:1px}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:5px 12px;border-radius:6px;font-size:11px;color:var(--muted);text-decoration:none;transition:all .15s;cursor:pointer;border:none;background:none;font-family:var(--font)}
+.nav-link:hover{color:var(--white);background:var(--soil3)}
+.nav-badge{background:var(--lime);color:var(--soil);font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:100px 48px 60px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,#2d5a2722,transparent);pointer-events:none}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--lime);margin-bottom:20px}
+.hero-eyebrow::before{content:'';width:24px;height:1px;background:var(--lime)}
+.hero-title{font-size:clamp(36px,6vw,76px);font-weight:900;line-height:1.0;letter-spacing:-.04em;margin-bottom:16px;max-width:800px}
+.hero-title em{color:var(--lime);font-style:normal}
+.hero-title .sub{font-size:clamp(18px,2.5vw,32px);font-weight:300;color:var(--muted);display:block;margin-top:6px;letter-spacing:-.01em}
+.hero-desc{font-size:15px;color:var(--muted);max-width:560px;line-height:1.7;margin-bottom:32px}
+.hero-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px}
+.hchip{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);color:var(--muted);background:var(--soil2)}
+.hchip.active{border-color:var(--lime);color:var(--lime);background:#84cc1611}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:640px}
+.hstat{background:var(--soil2);padding:16px 20px}
+.hstat-n{font-size:26px;font-weight:900;letter-spacing:-.03em;color:var(--lime)}
+.hstat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.hero-scroll{position:absolute;bottom:32px;left:48px;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em}
+.scroll-line{width:40px;height:1px;background:var(--faint)}
+
+/* ── SECTIONS ── */
+.section{padding:80px 48px;max-width:1100px;margin:0 auto}
+.section-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--lime);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-eyebrow::before{content:'';width:20px;height:1px;background:var(--lime)}
+.section-title{font-size:clamp(24px,3.5vw,42px);font-weight:800;letter-spacing:-.03em;margin-bottom:8px;line-height:1.1}
+.section-lead{font-size:14px;color:var(--muted);max-width:560px;line-height:1.7;margin-bottom:40px}
+
+/* ── PHASE CARDS ── */
+.phases{display:flex;flex-direction:column;gap:2px}
+.phase{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s;cursor:pointer}
+.phase:hover{border-color:var(--bark)}
+.phase.active{border-color:var(--lime)}
+.phase-header{padding:20px 24px;display:flex;align-items:center;gap:16px}
+.phase-num{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--lime);background:#84cc1618;border:1px solid #84cc1630;border-radius:6px;padding:3px 10px;flex-shrink:0}
+.phase-title{font-size:15px;font-weight:700;flex:1}
+.phase-meses{font-size:11px;color:var(--muted);flex-shrink:0}
+.phase-monto{font-size:13px;font-weight:700;color:var(--wheat);flex-shrink:0}
+.phase-toggle{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);flex-shrink:0;transition:all .2s}
+.phase.active .phase-toggle{background:var(--lime);color:var(--soil);border-color:var(--lime)}
+.phase-body{display:none;padding:0 24px 24px;border-top:1px solid var(--border)}
+.phase.active .phase-body{display:block}
+.phase-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px;padding-top:16px}
+.deliverables{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.deliv{background:var(--soil3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;display:flex;align-items:flex-start;gap:7px}
+.deliv-icon{color:var(--lime);flex-shrink:0;font-size:11px}
+.milestone-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.milestone{font-size:10px;font-weight:600;padding:3px 9px;border-radius:8px;background:#84cc1611;color:var(--lime);border:1px solid #84cc1633}
+
+/* ── AGENTS ── */
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.agent-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;transition:all .2s;position:relative;overflow:hidden}
+.agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.agent-card.geo::before{background:var(--sky)}
+.agent-card.clima::before{background:#60a5fa}
+.agent-card.suelo::before{background:var(--wheat)}
+.agent-card.mercado::before{background:var(--sun)}
+.agent-card.fito::before{background:#ef4444}
+.agent-card.micro::before{background:#a78bfa}
+.agent-card.ecologia::before{background:var(--leaf)}
+.agent-card.agro::before{background:var(--lime)}
+.agent-card.logistica::before{background:#14b8a6}
+.agent-card.vision::before{background:#ec4899}
+.agent-card.market::before{background:#f97316}
+.agent-card.orq::before{background:var(--lime);height:3px}
+.agent-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.agent-emoji{font-size:22px}
+.agent-name{font-size:13px;font-weight:700}
+.agent-layer{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:1px}
+.agent-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.agent-skills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.askill{font-size:9px;font-weight:600;padding:2px 6px;border-radius:5px;background:var(--soil3);color:var(--muted);border:1px solid var(--border)}
+.agent-apis{font-size:10px;color:var(--faint);font-family:var(--mono)}
+
+/* ── API TABLE ── */
+.api-section{margin-bottom:32px}
+.api-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--wheat);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.api-table{width:100%;border-collapse:collapse}
+.api-table th{text-align:left;padding:7px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+.api-table td{padding:8px 12px;border-bottom:1px solid #ffffff05;vertical-align:top}
+.api-table tr:last-child td{border-bottom:none}
+.api-table tr:hover td{background:var(--soil3)}
+.api-name{font-size:12px;font-weight:600}
+.api-url{font-size:10px;font-family:var(--mono);color:var(--lime);word-break:break-all;margin-top:2px}
+.api-desc{font-size:11px;color:var(--muted)}
+.api-badge{display:inline-flex;font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid;white-space:nowrap}
+.ab-free{background:#2d5a2722;color:#4ade80;border-color:#2d5a2766}
+.ab-paid{background:#78350f22;color:#fbbf24;border-color:#78350f66}
+.ab-key{background:#1e3a5f22;color:#93c5fd;border-color:#1d4ed866}
+.ab-ok{background:#14532d22;color:#4ade80;border-color:#16a34a66}
+.api-cost{font-size:11px;font-weight:600}
+
+/* ── ARCHITECTURE ── */
+.arch-layer{margin-bottom:20px}
+.arch-layer-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.arch-layer-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.arch-items{display:flex;gap:8px;flex-wrap:wrap}
+.arch-item{background:var(--soil3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11px;display:flex;align-items:center;gap:6px}
+.arch-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ── COST TABLE ── */
+.cost-block{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.cost-head{background:var(--soil3);padding:10px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--wheat)}
+.cost-row{display:flex;justify-content:space-between;padding:8px 16px;border-bottom:1px solid #ffffff05;font-size:12px;gap:12px}
+.cost-row:last-child{border-bottom:none}
+.cost-label{color:var(--muted);flex:1}
+.cost-note{font-size:10px;color:var(--faint)}
+.cost-val{font-weight:600;flex-shrink:0}
+.cost-total{display:flex;justify-content:space-between;padding:12px 16px;background:var(--soil3);font-size:14px;font-weight:800}
+.cost-total-val{color:var(--lime)}
+
+/* ── TIMELINE ── */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:24px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:14px;height:14px;border-radius:4px;background:var(--lime);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:var(--soil)}
+.tl-dot.future{background:var(--soil3);border:1px solid var(--border);color:var(--muted)}
+.tl-dot.current{box-shadow:0 0 0 4px #84cc1620}
+.tl-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.tl-desc{font-size:11px;color:var(--muted);line-height:1.6}
+.tl-tag{display:inline-flex;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;margin-top:5px}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 0 0}
+
+/* ── FOOTER ── */
+.footer{border-top:1px solid var(--border);padding:32px 48px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--faint)}
+.footer strong{color:var(--lime)}
+
+/* ── UTILITIES ── */
+.tag{display:inline-flex;font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;margin-right:4px}
+.tag-green{background:#2d5a2722;color:#4ade80;border:1px solid #2d5a2766}
+.tag-amber{background:#78350f22;color:#fbbf24;border:1px solid #78350f66}
+.tag-blue{background:#1e3a5f22;color:#93c5fd;border:1px solid #1d4ed866}
+.tag-red{background:#7f1d1d22;color:#fca5a5;border:1px solid #7f1d1d66}
+.tag-purple{background:#4c1d9522;color:#c4b5fd;border:1px solid #4c1d9566}
+.alert{border-radius:10px;padding:12px 16px;font-size:12px;line-height:1.6;margin-bottom:16px;display:flex;gap:10px}
+.alert-ok{background:#2d5a2718;border:1px solid #2d5a2755;color:#4ade80}
+.alert-info{background:#1e3a5f18;border:1px solid #1d4ed855;color:#93c5fd}
+
+@media(max-width:700px){
+  .hero{padding:90px 20px 48px}
+  .section{padding:60px 20px}
+  .hero-stats{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+  .footer{padding:24px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-dot">🌱</div>
+    <div>
+      <div>AgroSense</div>
+      <div class="nav-logo-sub">Plan Maestro</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="scrollTo('fases')">Fases</button>
+    <button class="nav-link" onclick="scrollTo('agentes')">Agentes IA</button>
+    <button class="nav-link" onclick="scrollTo('apis')">APIs</button>
+    <button class="nav-link" onclick="scrollTo('arquitectura')">Arquitectura</button>
+    <button class="nav-link" onclick="scrollTo('inversion')">Inversión</button>
+    <button class="nav-link" onclick="scrollTo('implementacion')">Implementación</button>
+    <button class="nav-link" onclick="scrollTo('roadmap')">Roadmap</button>
+  </div>
+  <div style="font-size:10px;color:var(--lime);font-family:var(--mono)">CyberBotLabs.io · 2025</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Documento maestro del proyecto</div>
+  <h1 class="hero-title">
+    AgroSense
+    <em> — Inteligencia agrícola</em>
+    <span class="sub">geolocalizada en tiempo real</span>
+  </h1>
+  <p class="hero-desc">Plan completo de desarrollo: 4 fases, 11 agentes de IA especializados, 14 APIs en tiempo real y arquitectura SaaS B2C · B2B · B2G bajo la marca CyberBotLabs.io.</p>
+  <div class="hero-chips">
+    <span class="hchip active">Multi-agente IA</span>
+    <span class="hchip active">Datos en tiempo real</span>
+    <span class="hchip active">Diagnóstico visual</span>
+    <span class="hchip active">Freemium SaaS</span>
+    <span class="hchip">Node.js + PostgreSQL</span>
+    <span class="hchip">Claude API</span>
+    <span class="hchip">Open-Meteo</span>
+    <span class="hchip">SoilGrids</span>
+  </div>
+  <div class="hero-stats">
+    <div class="hstat"><div class="hstat-n">4</div><div class="hstat-l">Fases de desarrollo</div></div>
+    <div class="hstat"><div class="hstat-n">11</div><div class="hstat-l">Agentes especializados</div></div>
+    <div class="hstat"><div class="hstat-n">14</div><div class="hstat-l">APIs integradas</div></div>
+    <div class="hstat"><div class="hstat-n">18m</div><div class="hstat-l">Hasta breakeven</div></div>
+  </div>
+  <div class="hero-scroll"><div class="scroll-line"></div>Desplaza para ver el plan completo</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: VISIÓN GENERAL -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-eyebrow">El problema que resuelve</div>
+  <h2 class="section-title">Por qué existe AgroSense</h2>
+  <p class="section-lead">El productor agrícola mexicano toma decisiones críticas de siembra sin datos. El 67% no tiene acceso a información climática en tiempo real, el 82% siembra lo mismo que sus vecinos generando saturación de mercado, y el intermediario captura el 60–70% del valor final de su producto.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+    <div class="alert alert-ok">🎯 <div><strong>Oportunidad central:</strong> El productor que siembra ajo negro en lugar de maíz en la misma hectárea multiplica su ingreso ×20. Nadie le estaba diciendo esto de forma sistemática.</div></div>
+    <div class="alert alert-info">💡 <div><strong>Estrategia anti-saturación:</strong> Identificar cultivos con perfil agroecológico compatible pero baja competencia local — el núcleo diferenciador del sistema.</div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: FASES -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="fases">
+  <div class="section-eyebrow">Hoja de ruta</div>
+  <h2 class="section-title">4 fases de desarrollo</h2>
+  <p class="section-lead">El proyecto se desarrolla en fases acumulativas — cada una construye sobre la anterior y agrega valor comercializable antes de la siguiente.</p>
+
+  <div class="phases" id="phaseList">
+
+    <!-- FASE 1 -->
+    <div class="phase active" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <span class="phase-num">FASE 01</span>
+        <span class="phase-title">MVP real con APIs en tiempo real</span>
+        <span class="phase-meses">Meses 1–4</span>
+        <span class="phase-monto">$280,000 MXN</span>
+        <div class="phase-toggle">▲</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-desc">Reemplazar todos los datos estáticos del prototipo por fuentes de datos reales conectadas en tiempo real. El usuario ingresa una zona geográfica (texto o clic en mapa), el sistema consulta 5 APIs en paralelo y devuelve en menos de 8 segundos: perfil agroecológico completo, pronóstico climático 16 días, histórico de lluvia 12 meses, análisis de suelo y ranking de viabilidad de 8 cultivos con scores calculados dinámicamente. Se lanza versión Beta con 50 productores piloto en Guanajuato y Oaxaca.</div>
+        <div class="deliverables">
+          <div class="deliv"><span class="deliv-icon">✓</span>Motor de APIs: Open-Meteo Forecast + Archive + Geocoding</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Integración SoilGrids ISRIC para datos de suelo</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Mapa interactivo Leaflet con punto y polígono</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Motor de scores climáticos por cultivo (8 cultivos)</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Análisis de oportunidad de mercado vía Claude AI</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Módulo climático predictivo (ENSO, SPI, heladas)</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Módulo análisis costo + ciclo con filtros</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Dashboard de resultados 5 secciones + exportación PDF</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Diagnóstico fitosanitario por imagen (Claude Vision)</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Landing SaaS con planes Gratis / Pro / Enterprise</div>
+        </div>
+        <div class="milestone-row">
+          <span class="milestone">Mes 1 — Motor APIs funcional</span>
+          <span class="milestone">Mes 2 — Beta 50 usuarios</span>
+          <span class="milestone">Mes 3 — Diagnóstico visual IA</span>
+          <span class="milestone">Mes 4 — Dashboard completo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <span class="phase-num">FASE 02</span>
+        <span class="phase-title">Bitácora, Auth y Flujo de caja</span>
+        <span class="phase-meses">Meses 5–8</span>
+        <span class="phase-monto">$320,000 MXN</span>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-desc">Agregar la capa de persistencia que convierte AgroSense de herramienta de análisis a plataforma de acompañamiento del ciclo completo. El productor ya no solo decide qué sembrar — registra cada actividad de campo, consulta su flujo de caja mes a mes, y recibe alertas automáticas cuando el clima o el mercado cambian. Esta fase activa el primer cobro real del modelo freemium.</div>
+        <div class="deliverables">
+          <div class="deliv"><span class="deliv-icon">✓</span>Backend Node.js + Express con 29 endpoints REST</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>PostgreSQL con 10 tablas, triggers y vistas SQL</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Autenticación JWT + refresh tokens + bcrypt</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Rate limiting diferenciado por plan</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Módulo de parcelas con geolocalización</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Ciclos de cultivo con estados y seguimiento</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Bitácora de campo con registro de insumos y costos</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Flujo de caja proyectado vs real por mes</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Centro de alertas automáticas (helada, plaga, mercado)</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Dashboard integrado con 5 vistas navegables</div>
+        </div>
+        <div class="milestone-row">
+          <span class="milestone">Mes 5 — BD + Auth</span>
+          <span class="milestone">Mes 6 — Bitácora activa</span>
+          <span class="milestone">Mes 7 — Flujo de caja</span>
+          <span class="milestone">Mes 8 — Primer MRR $50k</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <span class="phase-num">FASE 03</span>
+        <span class="phase-title">Red colaborativa + Bioinsumos + Compradores</span>
+        <span class="phase-meses">Meses 9–13</span>
+        <span class="phase-monto">$380,000 MXN</span>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-desc">Transformar AgroSense de herramienta individual a red de inteligencia colectiva. Los productores comparten alertas de plagas en tiempo real. El módulo de bioinsumos entrega recetas de producción casera (Trichoderma, Bacillus, caldos minerales) que reducen costos de insumos hasta 60%. El directorio de compradores cierra el ciclo conectando producción con mercado real.</div>
+        <div class="deliverables">
+          <div class="deliv"><span class="deliv-icon">✓</span>Módulo bioinsumos: bioinsecticidas, biofungicidas, bioestimulantes</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Recetas de producción casera validadas por agrónomo</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Árbol de decisión orgánico vs convencional</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Alertas regionales colaborativas de plagas</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Mapa de brotes por municipio en tiempo real</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Directorio de compradores verificados por estado</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Certificadoras orgánicas (CERTIMEX, OCIA, IMO)</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Simulador de escenarios financieros (sensibilidad)</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Alertas SMS/WhatsApp/email vía Twilio</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Integración con SIAP/SNIIM para precios de mercado</div>
+        </div>
+        <div class="milestone-row">
+          <span class="milestone">Mes 9 — Bioinsumos live</span>
+          <span class="milestone">Mes 10 — Red alertas</span>
+          <span class="milestone">Mes 11 — Directorio compradores</span>
+          <span class="milestone">Mes 13 — 500 usuarios Pro</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div class="phase" onclick="togglePhase(this)">
+      <div class="phase-header">
+        <span class="phase-num">FASE 04</span>
+        <span class="phase-title">API pública + B2G + White-label + Serie A</span>
+        <span class="phase-meses">Meses 14–18</span>
+        <span class="phase-monto">$420,000 MXN</span>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-desc">Escalar el modelo a gobiernos estatales, aseguradoras agrícolas y organismos internacionales. La API REST permite integrar AgroSense en sistemas institucionales existentes. El dashboard Enterprise multi-zona permite a un organismo estatal monitorear miles de productores simultáneamente. Se lanza la ronda Serie A con tracción demostrada de 2,000 usuarios y primer contrato gubernamental.</div>
+        <div class="deliverables">
+          <div class="deliv"><span class="deliv-icon">✓</span>API REST pública documentada (OpenAPI 3.0)</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Dashboard Enterprise multi-zona / municipio</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Módulo de riesgo para aseguradoras agrícolas</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Datos históricos 40 años para análisis de riesgo</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>White-label: branding personalizado por cliente</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>SLA garantizado 99.9% uptime</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Módulo edafológico avanzado con análisis de laboratorio</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Integración SAGARPA / SADER para programas de apoyo</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>App móvil nativa iOS + Android</div>
+          <div class="deliv"><span class="deliv-icon">✓</span>Ronda Serie A — $8.5M USD objetivo</div>
+        </div>
+        <div class="milestone-row">
+          <span class="milestone">Mes 14 — API pública</span>
+          <span class="milestone">Mes 15 — Contrato B2G</span>
+          <span class="milestone">Mes 16 — App móvil</span>
+          <span class="milestone">Mes 18 — Serie A</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: AGENTES -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="agentes">
+  <div class="section-eyebrow">Sistema multi-agente</div>
+  <h2 class="section-title">11 agentes especializados</h2>
+  <p class="section-lead">El orquestador central coordina 10 agentes especializados organizados en 3 capas: datos externos, ciencias del suelo y biología, y síntesis agrícola. Cada agente tiene habilidades, fuentes de datos y responsabilidades únicas.</p>
+
+  <!-- Orquestador -->
+  <div class="agent-card orq" style="margin-bottom:12px;border-color:var(--lime)">
+    <div class="agent-header">
+      <span class="agent-emoji">🧠</span>
+      <div>
+        <div class="agent-name">Orquestador Central</div>
+        <div class="agent-layer">Capa 0 — Coordinación y síntesis</div>
+      </div>
+    </div>
+    <div class="agent-desc">Recibe la zona geográfica del usuario y decide qué agentes activar, en qué orden y en paralelo. Acumula los resultados de todas las capas, resuelve conflictos entre recomendaciones, y sintetiza el reporte técnico final. Es el "director técnico" del sistema — nunca procesa datos directamente, solo coordina y sintetiza.</div>
+    <div class="agent-skills">
+      <span class="askill">Orquestación paralela</span>
+      <span class="askill">Síntesis de resultados</span>
+      <span class="askill">Resolución de conflictos</span>
+      <span class="askill">Generación de reporte</span>
+      <span class="askill">Claude claude-sonnet-4-6</span>
+    </div>
+    <div class="agent-apis">API: anthropic.com/v1/messages · Modelo: claude-sonnet-4-6</div>
+  </div>
+
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:20px 0 10px;display:flex;align-items:center;gap:8px">Capa 1 — Datos externos<span style="flex:1;height:1px;background:var(--border)"></span></div>
+  <div class="agents-grid" style="margin-bottom:20px">
+
+    <div class="agent-card geo">
+      <div class="agent-header"><span class="agent-emoji">🛰</span><div><div class="agent-name">Agente Geoespacial</div><div class="agent-layer">Capa 1 · Datos externos</div></div></div>
+      <div class="agent-desc">Determina el perfil físico completo del territorio: altitud exacta en msnm, pendiente, exposición solar, cuenca hidrográfica, bioma, piso térmico y clasificación climática. Es el primer agente en activarse porque sus datos condicionan a todos los demás.</div>
+      <div class="agent-skills"><span class="askill">Geocodificación</span><span class="askill">Análisis de elevación</span><span class="askill">Clasificación de biomas</span><span class="askill">Pisos térmicos</span></div>
+      <div class="agent-apis">Open-Meteo Geocoding · Open-Meteo Elevation · OpenStreetMap</div>
+    </div>
+
+    <div class="agent-card clima">
+      <div class="agent-header"><span class="agent-emoji">🌦</span><div><div class="agent-name">Agente Climático Predictivo</div><div class="agent-layer">Capa 1 · Datos externos</div></div></div>
+      <div class="agent-desc">Integra pronóstico 16 días + histórico 12 meses + fenómenos macro (ENSO El Niño/La Niña). Calcula índice SPI de sequía, probabilidad de heladas por mes, ventanas óptimas de siembra según histórico 30 años, y genera alertas automáticas cuando detecta riesgos inminentes.</div>
+      <div class="agent-skills"><span class="askill">Pronóstico 16d</span><span class="askill">Análisis ENSO</span><span class="askill">Índice SPI</span><span class="askill">Detección heladas</span><span class="askill">Ventanas siembra</span></div>
+      <div class="agent-apis">Open-Meteo Forecast · Open-Meteo Archive · NOAA Climate API</div>
+    </div>
+
+    <div class="agent-card mercado">
+      <div class="agent-header"><span class="agent-emoji">📈</span><div><div class="agent-name">Agente de Mercado</div><div class="agent-layer">Capa 1 · Datos externos</div></div></div>
+      <div class="agent-desc">Analiza precios históricos y actuales de commodities agrícolas, detecta saturación de mercado por región, identifica cultivos con baja competencia local pero alta demanda, y calcula el ROI proyectado por hectárea para cada cultivo candidato incluyendo el multiplicador de transformación.</div>
+      <div class="agent-skills"><span class="askill">Precios en tiempo real</span><span class="askill">Detección saturación</span><span class="askill">Análisis ROI</span><span class="askill">Nichos de mercado</span></div>
+      <div class="agent-apis">SIAP/SNIIM SAGARPA · Claude AI (análisis) · Web search</div>
+    </div>
+
+    <div class="agent-card geo" style="--c:#14b8a6">
+      <div class="agent-header"><span class="agent-emoji">🛰</span><div><div class="agent-name">Agente Satelital</div><div class="agent-layer">Capa 1 · Datos externos</div></div></div>
+      <div class="agent-desc">Procesa imágenes satelitales para extraer índices de vegetación (NDVI), humedad del suelo (NDWI), temperatura superficial y cobertura actual del suelo. Detecta anomalías de vegetación que pueden indicar estrés hídrico, plagas o enfermedades antes de que sean visibles en campo.</div>
+      <div class="agent-skills"><span class="askill">NDVI</span><span class="askill">NDWI</span><span class="askill">Temperatura superficial</span><span class="askill">Cobertura suelo</span></div>
+      <div class="agent-apis">Sentinel Hub (Sentinel-2) · NASA EarthData · Landsat</div>
+    </div>
+
+  </div>
+
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:8px 0 10px;display:flex;align-items:center;gap:8px">Capa 2 — Ciencias del suelo y biología<span style="flex:1;height:1px;background:var(--border)"></span></div>
+  <div class="agents-grid" style="margin-bottom:20px">
+
+    <div class="agent-card suelo">
+      <div class="agent-header"><span class="agent-emoji">🌍</span><div><div class="agent-name">Agente Edafológico</div><div class="agent-layer">Capa 2 · Ciencias del suelo</div></div></div>
+      <div class="agent-desc">Interpreta la composición del suelo desde fuentes globales: pH, materia orgánica (SOC), textura (arcilla/arena/limo), capacidad de retención hídrica, conductividad eléctrica y clasificación de fertilidad. Genera recomendaciones de corrección de suelo específicas para el cultivo seleccionado.</div>
+      <div class="agent-skills"><span class="askill">Análisis pH</span><span class="askill">Materia orgánica</span><span class="askill">Textura del suelo</span><span class="askill">Fertilidad</span><span class="askill">Correcciones</span></div>
+      <div class="agent-apis">SoilGrids ISRIC v2 · INEGI suelos · FAO HWSD</div>
+    </div>
+
+    <div class="agent-card micro">
+      <div class="agent-header"><span class="agent-emoji">🔬</span><div><div class="agent-name">Agente Microbiológico</div><div class="agent-layer">Capa 2 · Biología del suelo</div></div></div>
+      <div class="agent-desc">Evalúa el microbioma del suelo y su potencial biológico: bacterias fijadoras de nitrógeno, hongos micorrízicos, actividad enzimática, y potencial de compostaje. Recomienda bioinsumos específicos para enriquecer la biota local y mejorar la disponibilidad de nutrientes sin agroquímicos.</div>
+      <div class="agent-skills"><span class="askill">Microbioma suelo</span><span class="askill">Hongos micorrízicos</span><span class="askill">Bioinsumos</span><span class="askill">Actividad enzimática</span></div>
+      <div class="agent-apis">Claude AI (análisis) · SoilGrids SOC · Literatura científica</div>
+    </div>
+
+    <div class="agent-card fito">
+      <div class="agent-header"><span class="agent-emoji">🦗</span><div><div class="agent-name">Agente Fitopatológico</div><div class="agent-layer">Capa 2 · Sanidad vegetal</div></div></div>
+      <div class="agent-desc">Identifica plagas y enfermedades endémicas de la zona según clima, altitud y cultivos vecinos. Integra el módulo de diagnóstico visual por imagen (Claude Vision) para identificar problemas fitosanitarios desde una foto en campo. Genera protocolos de tratamiento orgánico y convencional con dosis exactas y períodos de carencia.</div>
+      <div class="agent-skills"><span class="askill">Diagnóstico visual IA</span><span class="askill">Plagas endémicas</span><span class="askill">Protocolo tratamiento</span><span class="askill">Bioinsumos</span><span class="askill">SENASICA</span></div>
+      <div class="agent-apis">Claude Vision API · SENASICA registros · CABI Crop Protection</div>
+    </div>
+
+  </div>
+
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:8px 0 10px;display:flex;align-items:center;gap:8px">Capa 3 — Síntesis y recomendación<span style="flex:1;height:1px;background:var(--border)"></span></div>
+  <div class="agents-grid">
+
+    <div class="agent-card agro">
+      <div class="agent-header"><span class="agent-emoji">🌾</span><div><div class="agent-name">Agente Agronómico</div><div class="agent-layer">Capa 3 · Síntesis agrícola</div></div></div>
+      <div class="agent-desc">El agente más complejo. Cruza datos de todas las capas anteriores y genera la lista de cultivos viables con score climático 0–100, calendario óptimo de siembra según histórico 30 años, protocolos de producción completos por etapa, y análisis de viabilidad para producción orgánica o convencional.</div>
+      <div class="agent-skills"><span class="askill">Score viabilidad</span><span class="askill">Calendario siembra</span><span class="askill">Protocolo producción</span><span class="askill">Análogos globales</span><span class="askill">Cultivos alternativos</span></div>
+      <div class="agent-apis">Claude AI · Open-Meteo · INIFAP · CIMMYT · FAO GAEZ</div>
+    </div>
+
+    <div class="agent-card ecologia">
+      <div class="agent-header"><span class="agent-emoji">🌿</span><div><div class="agent-name">Agente Ecológico</div><div class="agent-layer">Capa 3 · Impacto ambiental</div></div></div>
+      <div class="agent-desc">Evalúa la compatibilidad del cultivo propuesto con el ecosistema local: biodiversidad de polinizadores, corredores biológicos, riesgo de erosión, balance hídrico, y potencial de secuestro de carbono. Recomienda prácticas de agricultura regenerativa que mejoran el suelo mientras producen.</div>
+      <div class="agent-skills"><span class="askill">Biodiversidad</span><span class="askill">Impacto hídrico</span><span class="askill">Carbono secuestro</span><span class="askill">Agricultura regenerativa</span></div>
+      <div class="agent-apis">Claude AI · IUCN Red List · CONABIO · Global Biodiversity</div>
+    </div>
+
+    <div class="agent-card logistica">
+      <div class="agent-header"><span class="agent-emoji">🚚</span><div><div class="agent-name">Agente de Logística</div><div class="agent-layer">Capa 3 · Viabilidad operativa</div></div></div>
+      <div class="agent-desc">Analiza la viabilidad operativa real del cultivo propuesto: disponibilidad de agua de riego, acceso a insumos en la región, infraestructura vial, mano de obra disponible, proximidad a mercados y plantas de procesamiento. Calcula el punto de equilibrio y proyección de flujo de caja mes a mes durante el ciclo.</div>
+      <div class="agent-skills"><span class="askill">Análisis logístico</span><span class="askill">Flujo de caja</span><span class="askill">Punto equilibrio</span><span class="askill">Cadena valor</span></div>
+      <div class="agent-apis">Claude AI · Google Maps API · INEGI DENUE · Stripe</div>
+    </div>
+
+    <div class="agent-card vision">
+      <div class="agent-header"><span class="agent-emoji">📷</span><div><div class="agent-name">Agente de Visión</div><div class="agent-layer">Capa 3 · Diagnóstico en campo</div></div></div>
+      <div class="agent-desc">Módulo de inteligencia artificial visual para diagnóstico fitosanitario en tiempo real. El productor toma una foto con su celular — el agente identifica la plaga, hongo, bacteria o deficiencia nutricional en menos de 15 segundos, con nivel de confianza, severidad, y protocolo de tratamiento completo.</div>
+      <div class="agent-skills"><span class="askill">Visión por computadora</span><span class="askill">Clasificación de síntomas</span><span class="askill">Severidad 4 niveles</span><span class="askill">Tratamiento dual</span><span class="askill">Cámara + upload</span></div>
+      <div class="agent-apis">Claude Vision API (claude-sonnet-4-6) · Anthropic Messages API</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: APIs -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="apis">
+  <div class="section-eyebrow">Infraestructura de datos</div>
+  <h2 class="section-title">14 APIs integradas en tiempo real</h2>
+  <p class="section-lead">El sistema elimina todos los datos estáticos. Cada análisis consulta fuentes reales en tiempo real. Las APIs están organizadas por capa funcional.</p>
+
+  <!-- Clima -->
+  <div class="api-section">
+    <div class="api-section-title">🌦 Datos climáticos</div>
+    <table class="api-table">
+      <thead><tr><th>API / Fuente</th><th>URL de integración</th><th>Datos</th><th>Costo</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="api-name">Open-Meteo Forecast</div><div style="font-size:10px;color:var(--muted)">Pronóstico 16 días</div></td>
+          <td><div class="api-url">https://api.open-meteo.com/v1/forecast</div></td>
+          <td class="api-desc">Temp max/min, precipitación, viento, UV, evapotranspiración, código de clima por día</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Open-Meteo Archive</div><div style="font-size:10px;color:var(--muted)">Histórico 40 años</div></td>
+          <td><div class="api-url">https://archive-api.open-meteo.com/v1/archive</div></td>
+          <td class="api-desc">Lluvia acumulada 12 meses, temperatura histórica, días de helada, promedio anual</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Open-Meteo Geocoding</div><div style="font-size:10px;color:var(--muted)">Nombre → coords</div></td>
+          <td><div class="api-url">https://geocoding-api.open-meteo.com/v1/search</div></td>
+          <td class="api-desc">Búsqueda de municipio/ciudad/ejido → latitud, longitud, país, estado</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Open-Meteo Elevation</div><div style="font-size:10px;color:var(--muted)">Altitud en msnm</div></td>
+          <td><div class="api-url">https://api.open-meteo.com/v1/elevation</div></td>
+          <td class="api-desc">Altitud exacta en metros sobre el nivel del mar para cualquier coordenada</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">NOAA Climate API</div><div style="font-size:10px;color:var(--muted)">ENSO / fenómenos macro</div></td>
+          <td><div class="api-url">https://www.ncdc.noaa.gov/cdo-web/api/v2/data</div></td>
+          <td class="api-desc">Estado El Niño/La Niña, anomalías climáticas globales, índices PDO, AMO</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-key">Pendiente</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Suelo -->
+  <div class="api-section">
+    <div class="api-section-title">🌍 Suelo y geoespacial</div>
+    <table class="api-table">
+      <thead><tr><th>API / Fuente</th><th>URL de integración</th><th>Datos</th><th>Costo</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="api-name">SoilGrids ISRIC v2</div><div style="font-size:10px;color:var(--muted)">Suelos globales</div></td>
+          <td><div class="api-url">https://rest.isric.org/soilgrids/v2.0/properties/query</div></td>
+          <td class="api-desc">pH, materia orgánica SOC, arcilla, arena, limo, nitrógeno — profundidad 0–5cm y 5–15cm</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Sentinel Hub</div><div style="font-size:10px;color:var(--muted)">Imágenes satelitales</div></td>
+          <td><div class="api-url">https://services.sentinel-hub.com/api/v1/process</div></td>
+          <td class="api-desc">NDVI (vegetación), NDWI (humedad), temperatura superficial, cobertura del suelo</td>
+          <td><span class="api-cost" style="color:#fbbf24">$25 USD/mes</span></td>
+          <td><span class="api-badge ab-key">Fase 3</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Leaflet + OpenStreetMap</div><div style="font-size:10px;color:var(--muted)">Mapa interactivo</div></td>
+          <td><div class="api-url">https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png</div></td>
+          <td class="api-desc">Tiles de mapa, polígonos, marcadores, layers satelitales — punto y área de análisis</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- IA -->
+  <div class="api-section">
+    <div class="api-section-title">🤖 Inteligencia artificial</div>
+    <table class="api-table">
+      <thead><tr><th>API / Fuente</th><th>URL de integración</th><th>Uso</th><th>Costo</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="api-name">Anthropic Claude API</div><div style="font-size:10px;color:var(--muted)">Orquestador + análisis</div></td>
+          <td><div class="api-url">https://api.anthropic.com/v1/messages</div></td>
+          <td class="api-desc">Análisis de oportunidad de mercado, recomendaciones agronómicas, síntesis de reportes, chat con el orquestador</td>
+          <td><span class="api-cost" style="color:#fbbf24">$0.015/reporte</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Claude Vision API</div><div style="font-size:10px;color:var(--muted)">Diagnóstico fitosanitario</div></td>
+          <td><div class="api-url">https://api.anthropic.com/v1/messages</div></td>
+          <td class="api-desc">Foto de planta → identificación de plaga/hongo/bacteria/deficiencia + severidad + tratamiento en &lt;15s</td>
+          <td><span class="api-cost" style="color:#fbbf24">$0.003/análisis</span></td>
+          <td><span class="api-badge ab-ok">✓ Integrada</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mercado y comercial -->
+  <div class="api-section">
+    <div class="api-section-title">💰 Mercado, pagos y comunicación</div>
+    <table class="api-table">
+      <thead><tr><th>API / Fuente</th><th>URL de integración</th><th>Uso</th><th>Costo</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="api-name">SIAP / SNIIM SAGARPA</div><div style="font-size:10px;color:var(--muted)">Precios agrícolas MX</div></td>
+          <td><div class="api-url">https://www.economia-sniim.gob.mx/SNIIM-API/</div></td>
+          <td class="api-desc">Precios de mercado en tiempo real de commodities agrícolas en mercados de México</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis</span></td>
+          <td><span class="api-badge ab-key">Fase 3</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Stripe + MercadoPago</div><div style="font-size:10px;color:var(--muted)">Suscripciones</div></td>
+          <td><div class="api-url">https://api.stripe.com/v1 · https://api.mercadopago.com</div></td>
+          <td class="api-desc">Cobro de suscripciones mensuales Plan Pro, facturación Enterprise, webhooks de pago</td>
+          <td><span class="api-cost" style="color:#fbbf24">2.9% + $3 MXN</span></td>
+          <td><span class="api-badge ab-key">Fase 2</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Twilio / WhatsApp Business</div><div style="font-size:10px;color:var(--muted)">Alertas SMS/WA</div></td>
+          <td><div class="api-url">https://api.twilio.com/2010-04-01/ · graph.facebook.com/v18.0</div></td>
+          <td class="api-desc">Alertas de helada, plaga, precio de mercado vía SMS y WhatsApp al celular del productor</td>
+          <td><span class="api-cost" style="color:#fbbf24">$0.05–0.10/msg</span></td>
+          <td><span class="api-badge ab-key">Fase 3</span></td>
+        </tr>
+        <tr>
+          <td><div class="api-name">Auth0 / Firebase Auth</div><div style="font-size:10px;color:var(--muted)">Autenticación</div></td>
+          <td><div class="api-url">https://YOUR_DOMAIN.auth0.com/api/v2/</div></td>
+          <td class="api-desc">Login, registro, OAuth Google/Facebook, JWT management, sesiones multi-dispositivo</td>
+          <td><span class="api-cost" style="color:#4ade80">Gratis hasta 7k usuarios</span></td>
+          <td><span class="api-badge ab-ok">✓ Fase 2 (JWT propio)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: ARQUITECTURA -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="arquitectura">
+  <div class="section-eyebrow">Stack tecnológico</div>
+  <h2 class="section-title">Arquitectura del sistema</h2>
+  <p class="section-lead">Arquitectura en capas desacopladas. El frontend es agnóstico del backend — puede vivir en CDN. El backend escala horizontalmente con PostgreSQL y Redis. Los agentes de IA son stateless y se llaman bajo demanda.</p>
+
+  <div class="arch-layer">
+    <div class="arch-layer-title">Frontend</div>
+    <div class="arch-items">
+      <div class="arch-item"><div class="arch-dot" style="background:var(--lime)"></div>HTML5 + CSS3 + Vanilla JS</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--lime)"></div>React (módulos avanzados)</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--lime)"></div>Leaflet.js (mapas)</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--lime)"></div>jsPDF (exportación)</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--lime)"></div>PWA (app móvil)</div>
+    </div>
+  </div>
+  <div class="arch-layer">
+    <div class="arch-layer-title">Backend</div>
+    <div class="arch-items">
+      <div class="arch-item"><div class="arch-dot" style="background:var(--sky)"></div>Node.js v22 + Express</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--sky)"></div>JWT + bcrypt (auth)</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--sky)"></div>Rate limiting por plan</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--sky)"></div>29 endpoints REST</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--sky)"></div>Middleware de roles</div>
+    </div>
+  </div>
+  <div class="arch-layer">
+    <div class="arch-layer-title">Base de datos</div>
+    <div class="arch-items">
+      <div class="arch-item"><div class="arch-dot" style="background:var(--wheat)"></div>PostgreSQL 16 + PostGIS</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--wheat)"></div>10 tablas relacionales</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--wheat)"></div>JSONB para datos de APIs</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--wheat)"></div>Triggers auto-updated</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--wheat)"></div>Redis (caché + rate limit)</div>
+    </div>
+  </div>
+  <div class="arch-layer">
+    <div class="arch-layer-title">Infraestructura</div>
+    <div class="arch-items">
+      <div class="arch-item"><div class="arch-dot" style="background:var(--muted)"></div>AWS / GCP (auto-escalable)</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--muted)"></div>Docker + CI/CD</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--muted)"></div>S3 / GCS (imágenes)</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--muted)"></div>CloudFront CDN</div>
+      <div class="arch-item"><div class="arch-dot" style="background:var(--muted)"></div>SSL/TLS + CORS</div>
+    </div>
+  </div>
+
+  <!-- Base de datos -->
+  <div style="margin-top:28px">
+    <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--muted)">Tablas PostgreSQL — 10 tablas</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px">
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">users</strong><span style="font-size:10px;color:var(--faint)">Auth · plan · perfil agro</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">parcelas</strong><span style="font-size:10px;color:var(--faint)">Coords · suelo · cache API</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">analisis</strong><span style="font-size:10px;color:var(--faint)">Snapshot completo JSONB</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">ciclos_cultivo</strong><span style="font-size:10px;color:var(--faint)">Siembra → cosecha</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">bitacora_campo</strong><span style="font-size:10px;color:var(--faint)">Actividades · insumos · costos</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">flujo_caja</strong><span style="font-size:10px;color:var(--faint)">Proyectado vs real / mes</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">alertas</strong><span style="font-size:10px;color:var(--faint)">Clima · plaga · mercado</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">diagnosticos_visuales</strong><span style="font-size:10px;color:var(--faint)">Foto → IA → tratamiento</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">alertas_regionales</strong><span style="font-size:10px;color:var(--faint)">Red colaborativa plagas</span></div>
+      <div class="arch-item" style="flex-direction:column;align-items:flex-start;gap:3px"><strong style="font-size:11px;font-family:var(--mono)">refresh_tokens</strong><span style="font-size:10px;color:var(--faint)">Sesiones seguras JWT</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: INVERSIÓN -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="inversion">
+  <div class="section-eyebrow">Plan financiero</div>
+  <h2 class="section-title">Inversión total: $1,400,000 MXN</h2>
+  <p class="section-lead">Inversión distribuida en 18 meses para llegar a breakeven. Estructura sugerida: 70% equity ($980k) + 30% deuda blanda FIRA/CONACYT ($420k).</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div>
+      <div class="cost-block">
+        <div class="cost-head">Desarrollo y equipo humano</div>
+        <div class="cost-row"><span class="cost-label">Desarrollador full-stack senior (18m)</span><span class="cost-val">$360,000</span></div>
+        <div class="cost-row"><span class="cost-label">Desarrollador móvil PWA + App nativa (12m)</span><span class="cost-val">$240,000</span></div>
+        <div class="cost-row"><span class="cost-label">Agrónomo consultor senior (18m) <span class="cost-note">— validación técnica</span></span><span class="cost-val">$180,000</span></div>
+        <div class="cost-row"><span class="cost-label">Diseño UX/UI sistema completo</span><span class="cost-val">$80,000</span></div>
+        <div class="cost-total"><span>Subtotal desarrollo</span><span class="cost-total-val">$860,000</span></div>
+      </div>
+
+      <div class="cost-block">
+        <div class="cost-head">Comercial y operativo</div>
+        <div class="cost-row"><span class="cost-label">Marketing digital (18m)</span><span class="cost-val">$120,000</span></div>
+        <div class="cost-row"><span class="cost-label">Piloto 50 productores</span><span class="cost-val">$45,000</span></div>
+        <div class="cost-row"><span class="cost-label">Legal y constitución SA de CV</span><span class="cost-val">$35,000</span></div>
+        <div class="cost-row"><span class="cost-label">Certificaciones COFEPRIS/SENASICA</span><span class="cost-val">$28,000</span></div>
+        <div class="cost-row"><span class="cost-label">Reserva operativa 3 meses</span><span class="cost-val">$113,000</span></div>
+        <div class="cost-total"><span>Subtotal comercial</span><span class="cost-total-val">$341,000</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="cost-block">
+        <div class="cost-head">Infraestructura mensual (×18 meses)</div>
+        <div class="cost-row"><span class="cost-label">AWS / GCP (servidores + BD)</span><span class="cost-val">$8,500/mes</span></div>
+        <div class="cost-row"><span class="cost-label">Anthropic Claude API (~2k análisis/mes)</span><span class="cost-val">$3,200/mes</span></div>
+        <div class="cost-row"><span class="cost-label">Sentinel Hub (imágenes satelitales)</span><span class="cost-val">$500/mes</span></div>
+        <div class="cost-row"><span class="cost-label">Twilio / WhatsApp alertas</span><span class="cost-val">$1,800/mes</span></div>
+        <div class="cost-row"><span class="cost-label">Auth0 + herramientas SaaS</span><span class="cost-val">$1,200/mes</span></div>
+        <div class="cost-total"><span>Infra total 18m</span><span class="cost-total-val">$274,000</span></div>
+      </div>
+
+      <div class="cost-block">
+        <div class="cost-head">Proyección de ingresos</div>
+        <div class="cost-row"><span class="cost-label">MRR mes 6 (80 Pro)</span><span class="cost-val" style="color:#fbbf24">$23,920</span></div>
+        <div class="cost-row"><span class="cost-label">MRR mes 12 (350 Pro + 1 Enterprise)</span><span class="cost-val" style="color:#fbbf24">$129,650</span></div>
+        <div class="cost-row"><span class="cost-label">MRR mes 18 (800 Pro + 3 Enterprise)</span><span class="cost-val" style="color:#4ade80">$314,200</span></div>
+        <div class="cost-row"><span class="cost-label">MRR año 3 (3,500 Pro + 12 Enterprise)</span><span class="cost-val" style="color:#4ade80">$1,346,500</span></div>
+        <div class="cost-total"><span>ROI proyectado año 4</span><span class="cost-total-val">×8 inversión</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: CONTROL DE IMPLEMENTACIÓN -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="implementacion">
+  <div class="section-eyebrow">Control vivo de avance</div>
+  <h2 class="section-title">Plan de implementación paso a paso</h2>
+  <p class="section-lead">Esta sección funciona como bitácora técnica del proyecto. Cada fase se tacha solo cuando cumple criterios verificables: código implementado, flujo probado y evidencia en el tracker.</p>
+
+  <div class="alert alert-info">📍 <div><strong>Estado actual:</strong> Fase 1 avanzada + Fase 2 local funcional. Contrato JSON de análisis completado. Próximo paso activo: separar agentes backend.</div></div>
+
+  <div class="cost-block">
+    <div class="cost-head">Fases de implementación</div>
+    <div class="cost-row"><span class="cost-label"><s>Preparación del workspace y estructura frontend/backend/docs</s><div class="cost-note">Completado: estructura organizada y servidor local operativo.</div></span><span class="cost-val" style="color:#4ade80">✓</span></div>
+    <div class="cost-row"><span class="cost-label">Fase 1 — MVP real con APIs y orquestador de agentes<div class="cost-note">Parcial: mapa, satélite, clima, suelo, ranking, agente local y contrato analysis-result.v1 existen. Falta separar agentes.</div></span><span class="cost-val" style="color:#fbbf24">En progreso</span></div>
+    <div class="cost-row"><span class="cost-label">Fase 2 — Auth, parcelas, ciclos, bitácora, flujo y alertas<div class="cost-note">Parcial: versión local JSON funcional. Falta PostgreSQL real, permisos por plan, rate limiting y persistencia de análisis.</div></span><span class="cost-val" style="color:#fbbf24">En progreso</span></div>
+    <div class="cost-row"><span class="cost-label">Fase 3 — Bioinsumos, compradores y red colaborativa<div class="cost-note">Pendiente: solo se agregaron módulos extendidos de fauna nociva y material vegetal como apoyo operativo.</div></span><span class="cost-val">Pendiente</span></div>
+    <div class="cost-row"><span class="cost-label">Fase 4 — API pública, B2G, white-label y escalamiento<div class="cost-note">Pendiente: depende de backend modular, base real, seguridad, pagos y documentación OpenAPI.</div></span><span class="cost-val">Pendiente</span></div>
+  </div>
+
+  <div class="cost-block">
+    <div class="cost-head">Checklist operativo inmediato</div>
+    <div class="cost-row"><span class="cost-label"><s>Guardar documento maestro en el proyecto</s></span><span class="cost-val" style="color:#4ade80">✓</span></div>
+    <div class="cost-row"><span class="cost-label"><s>Crear tracker de implementación</s></span><span class="cost-val" style="color:#4ade80">✓</span></div>
+    <div class="cost-row"><span class="cost-label"><s>Definir contrato formal de resultados del análisis</s></span><span class="cost-val" style="color:#4ade80">✓</span></div>
+    <div class="cost-row"><span class="cost-label">Separar agentes backend: geo, clima, suelo, mercado, agronómico, riesgo y orquestador</span><span class="cost-val" style="color:#fbbf24">Siguiente</span></div>
+    <div class="cost-row"><span class="cost-label">Adaptar frontend para renderizar solo el contrato del orquestador</span><span class="cost-val">Pendiente</span></div>
+    <div class="cost-row"><span class="cost-label">Guardar análisis como parcela y conectar recomendación → ciclo</span><span class="cost-val">Pendiente</span></div>
+    <div class="cost-row"><span class="cost-label">Migrar persistencia local JSON a PostgreSQL/PostGIS</span><span class="cost-val">Pendiente</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN: ROADMAP -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section" id="roadmap">
+  <div class="section-eyebrow">Hitos del proyecto</div>
+  <h2 class="section-title">Roadmap a 18 meses</h2>
+  <p class="section-lead">Secuencia de entregables con dependencias claras. Cada hito es un punto de validación con usuarios reales antes de continuar.</p>
+
+  <div class="timeline">
+    <div class="tl-item"><div class="tl-dot current">✓</div><div class="tl-title">Motor de APIs — Datos en tiempo real</div><div class="tl-desc">Open-Meteo Forecast + Archive + Geocoding + SoilGrids integrados. Motor de scores climáticos para 8 cultivos funcionando. Mapa Leaflet con punto y polígono.</div><span class="tl-tag" style="background:#2d5a2722;color:#4ade80;border:1px solid #2d5a2766">Completado — Fase 1</span></div>
+    <div class="tl-item"><div class="tl-dot current">✓</div><div class="tl-title">Dashboard de resultados con 5 secciones</div><div class="tl-desc">Resumen ejecutivo, análisis climático, viabilidad de cultivos, producción y transformación, plan financiero. Exportación PDF con branding CyberBotLabs.</div><span class="tl-tag" style="background:#2d5a2722;color:#4ade80;border:1px solid #2d5a2766">Completado — Fase 1</span></div>
+    <div class="tl-item"><div class="tl-dot current">✓</div><div class="tl-title">Diagnóstico fitosanitario por imagen IA</div><div class="tl-desc">Claude Vision identifica plaga/hongo/bacteria desde foto en campo en menos de 15 segundos. Protocolo orgánico y convencional con dosis exactas.</div><span class="tl-tag" style="background:#2d5a2722;color:#4ade80;border:1px solid #2d5a2766">Completado — Fase 1</span></div>
+    <div class="tl-item"><div class="tl-dot current">✓</div><div class="tl-title">Backend PostgreSQL + Auth + API REST</div><div class="tl-desc">10 tablas, 29 endpoints, JWT con refresh tokens, rate limiting por plan, middleware de roles. Schema con triggers y vistas SQL.</div><span class="tl-tag" style="background:#2d5a2722;color:#4ade80;border:1px solid #2d5a2766">Completado — Fase 2</span></div>
+    <div class="tl-item"><div class="tl-dot current">✓</div><div class="tl-title">Bitácora de campo + Flujo de caja</div><div class="tl-desc">Registro diario de actividades, insumos y costos. Proyección flujo de caja mes a mes con comparativo proyectado vs real. Alertas automáticas.</div><span class="tl-tag" style="background:#2d5a2722;color:#4ade80;border:1px solid #2d5a2766">Completado — Fase 2</span></div>
+    <div class="tl-item"><div class="tl-dot future">6</div><div class="tl-title">Primer MRR real — Activar cobros Plan Pro</div><div class="tl-desc">Integración Stripe/MercadoPago. Primeros 80 usuarios Pro a $299/mes. MRR objetivo: $23,920 MXN.</div><span class="tl-tag" style="background:#78350f22;color:#fbbf24;border:1px solid #78350f66">Mes 6 — En progreso</span></div>
+    <div class="tl-item"><div class="tl-dot future">7</div><div class="tl-title">Módulo de bioinsumos completo</div><div class="tl-desc">Árbol de decisión orgánico/convencional. Recetas de producción casera de Trichoderma, Bacillus, caldos minerales. Integración con SENASICA.</div><span class="tl-tag" style="background:#1e3a5f22;color:#93c5fd;border:1px solid #1d4ed866">Mes 9 — Fase 3</span></div>
+    <div class="tl-item"><div class="tl-dot future">8</div><div class="tl-title">Red colaborativa de alertas regionales</div><div class="tl-desc">Mapa de brotes de plagas reportados por productores. Alertas automáticas a usuarios en radio configurable. Sistema de confirmaciones.</div><span class="tl-tag" style="background:#1e3a5f22;color:#93c5fd;border:1px solid #1d4ed866">Mes 10 — Fase 3</span></div>
+    <div class="tl-item"><div class="tl-dot future">9</div><div class="tl-title">Primer contrato gobierno estatal</div><div class="tl-desc">Dashboard Enterprise multi-zona para SADER o Secretaría de Agricultura estatal. SLA garantizado. White-label con branding institucional.</div><span class="tl-tag" style="background:#1e3a5f22;color:#93c5fd;border:1px solid #1d4ed866">Mes 12 — Fase 3</span></div>
+    <div class="tl-item"><div class="tl-dot future">A</div><div class="tl-title">API pública + App móvil + Serie A</div><div class="tl-desc">API REST documentada (OpenAPI 3.0) para integraciones institucionales. App iOS + Android. Ronda Serie A con objetivo $8.5M USD.</div><span class="tl-tag" style="background:#4c1d9522;color:#c4b5fd;border:1px solid #4c1d9566">Mes 18 — Fase 4</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div><strong>AgroSense</strong> — Plan Maestro del Proyecto · v2.0</div>
+  <div><strong>CyberBotLabs.io</strong> · Documento confidencial · 2025</div>
+  <div>4 fases · 11 agentes · 14 APIs · $1.4M MXN · 18 meses</div>
+</div>
+
+<script>
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+function togglePhase(el) {
+  const wasActive = el.classList.contains("active");
+  document.querySelectorAll(".phase").forEach(p => {
+    p.classList.remove("active");
+    p.querySelector(".phase-toggle").textContent = "▼";
+  });
+  if (!wasActive) {
+    el.classList.add("active");
+    el.querySelector(".phase-toggle").textContent = "▲";
+  }
+}
+</script>
+</body>
+</html>

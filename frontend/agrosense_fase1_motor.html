@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AgroSense — Motor Fase 1</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a1f10;--bg2:#0f2a16;--bg3:#142e1a;--bg4:#1a3820;
+  --lime:#84cc16;--lime2:#a3e635;--lime3:#d9f99d;
+  --white:#f8fafc;--muted:#94a3b8;--faint:#3a5a42;
+  --card:#152a1a;--border:#1e4025;
+  --red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;--teal:#14b8a6;
+  --font:'Inter',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:100vh}
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-dot{width:28px;height:28px;background:var(--lime);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo-name{font-size:14px;font-weight:800}
+.logo-sub{font-size:9px;color:var(--lime);text-transform:uppercase;letter-spacing:.07em}
+.api-status{display:flex;gap:6px;flex-wrap:wrap}
+.api-pill{font-size:10px;font-weight:600;padding:3px 8px;border-radius:10px;border:1px solid}
+.api-ok{background:#14532d22;color:#4ade80;border-color:#16a34a55}
+.api-wait{background:#78350f22;color:#fbbf24;border-color:#78350f55}
+.api-err{background:#7f1d1d22;color:#fca5a5;border-color:#7f1d1d55}
+.gps-chip{cursor:pointer;background:#1e3a5f22;color:#93c5fd;border-color:#1d4ed866}
+.gps-chip.live{color:#bfdbfe;border-color:#3b82f6;background:#1d4ed833}
+
+	.main{display:grid;grid-template-columns:minmax(0,80%);justify-content:center;gap:0;height:calc(100vh - 57px)}
+	.main.results-open{grid-template-columns:1fr 1.4fr}
+	@media(max-width:800px){.main,.main.results-open{grid-template-columns:1fr;height:auto}}
+
+/* PANEL IZQUIERDO */
+	.left-panel{display:flex;flex-direction:column;overflow:hidden}
+	.main.results-open .left-panel{border-right:1px solid var(--border)}
+.search-area{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.search-row{display:flex;gap:6px;margin-bottom:10px}
+.search-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:9px 12px;font-size:13px;font-family:var(--font)}
+.search-input:focus{outline:none;border-color:var(--lime)}
+.search-input::placeholder{color:var(--faint)}
+.voice-btn{width:40px;justify-content:center;padding:9px;color:var(--lime2)}
+.voice-btn.listening{color:var(--white);border-color:var(--red);background:#7f1d1d66;animation:voicePulse 1.2s ease-in-out infinite}
+.voice-btn:disabled{opacity:.45;cursor:not-allowed}
+.voice-status{display:none;font-size:10px;color:var(--muted);margin:0 0 9px 2px}
+.voice-status.on{display:block}
+@keyframes voicePulse{50%{box-shadow:0 0 0 5px #ef444422}}
+.btn{border:none;border-radius:8px;cursor:pointer;font-family:var(--font);font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--lime);color:#06130a;padding:9px 16px;font-size:15px}
+.btn-primary:hover{background:var(--lime2)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{background:var(--bg3);color:var(--white);border:1px solid var(--border);padding:6px 12px;font-size:13px}
+.btn-sm:hover{border-color:var(--lime);color:var(--lime2);background:var(--bg4)}
+.tool-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tool-hint{font-size:10px;color:var(--faint);margin-left:auto}
+.field-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.field-tab{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:8px;padding:9px 7px;font:600 12px var(--font);cursor:pointer}
+.field-tab:hover{background:var(--bg3);color:var(--white)}
+.field-tab.on{background:var(--bg4);border-color:var(--border);color:var(--lime2)}
+.field-view{display:none;min-height:0;flex:1;overflow-y:auto}
+.field-view.on{display:flex;flex-direction:column}
+.field-view::-webkit-scrollbar{width:4px}.field-view::-webkit-scrollbar-thumb{background:var(--border)}
+.measurement-panel{padding:9px 14px;background:var(--bg2);border-top:1px solid var(--border);display:none}
+.measurement-panel.on{display:block}
+.measure-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.measure-item{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px;text-align:center}
+.measure-value{font-size:14px;font-weight:800;color:var(--lime2)}
+.measure-label{font-size:9px;color:var(--muted);margin-top:2px}
+.number-marker{width:24px;height:24px;border-radius:50%;background:var(--lime);border:2px solid #fff;color:#0a1f10;font:800 11px var(--font);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #0008}
+
+/* DIAGNÓSTICO DE CAMPO */
+.field-form{padding:16px}
+.field-intro{font-size:11px;line-height:1.5;color:var(--muted);margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-field{margin-bottom:11px}
+.form-field label{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--white);border-radius:8px;padding:10px;font:12px var(--font)}
+.form-field textarea{min-height:86px;resize:vertical}.form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--lime)}
+.choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.choice-btn{min-height:46px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);border-radius:8px;font:700 11px var(--font);cursor:pointer;padding:7px}
+.choice-btn.on{border-color:var(--lime);background:#14532d44;color:var(--lime2)}
+.scale-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.scale-btn{height:42px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);border-radius:8px;font:800 13px var(--font);cursor:pointer}
+.scale-btn.on{background:var(--lime);color:var(--bg);border-color:var(--lime)}
+.photo-box{border:1px dashed var(--faint);border-radius:10px;padding:12px;text-align:center;background:var(--bg3)}
+.photo-preview{display:none;width:100%;max-height:210px;object-fit:cover;border-radius:8px;margin-top:10px}
+.save-bar{position:sticky;bottom:0;padding:12px 16px;background:linear-gradient(transparent,var(--bg2) 25%);display:flex;gap:8px}
+.save-bar .btn{justify-content:center;flex:1}
+
+/* HISTORIAL */
+.history-head{padding:14px 16px 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.history-list{padding:8px 14px 18px}
+.history-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer}
+.history-card:hover{border-color:var(--lime)}
+.history-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px}.history-name{font-size:13px;font-weight:800}.history-date{font-size:9px;color:var(--faint)}
+.history-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+.history-actions{display:flex;gap:6px;margin-top:9px}.danger-btn{color:#fca5a5;border-color:#7f1d1d88}
+.empty-field{text-align:center;color:var(--muted);padding:50px 24px;font-size:12px}
+.detail-modal{display:none;position:fixed;inset:0;background:#000b;z-index:1000;padding:20px;align-items:center;justify-content:center}
+.detail-modal.on{display:flex}.detail-card{width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}.detail-photo{width:100%;max-height:280px;object-fit:cover;border-radius:9px;margin:10px 0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--white);color:var(--bg);border-radius:9px;padding:10px 16px;font-size:12px;font-weight:700;z-index:1200;opacity:0;pointer-events:none;transition:.2s}.toast.on{opacity:1;transform:translate(-50%,0)}
+.device-wrap{padding:14px}.device-intro{font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:12px}.device-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:10px}.device-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;font-weight:800;margin-bottom:5px}.device-desc{font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:10px}.device-actions{display:flex;gap:6px;flex-wrap:wrap}.device-status{font-size:9px;border:1px solid var(--border);border-radius:10px;padding:3px 7px;color:var(--muted)}.device-status.live{color:#4ade80;border-color:#16a34a55}.device-status.error{color:#fca5a5;border-color:#ef444455}.device-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px}.device-fields input,.device-fields select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--white);border-radius:7px;padding:8px;font:10px var(--font)}.telemetry-log{background:#06130a;border:1px solid var(--border);border-radius:8px;padding:8px;font:9px/1.5 ui-monospace,monospace;color:#86efac;max-height:90px;overflow:auto;margin-top:8px;white-space:pre-wrap}.capability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}.capability{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px;text-align:center;font-size:9px;color:var(--muted)}.capability strong{display:block;color:var(--white);margin-bottom:2px}.safety-note{font-size:10px;line-height:1.5;color:#fbbf24;background:#78350f18;border:1px solid #78350f55;border-radius:8px;padding:9px;margin-bottom:12px}
+@media(max-width:620px){.field-tabs{grid-template-columns:1fr 1fr}.form-grid,.device-fields{grid-template-columns:1fr}.field-tab{font-size:11px}.measure-grid{grid-template-columns:1fr 1fr 1fr}.capability-grid{grid-template-columns:1fr 1fr 1fr}}
+
+/* MAPA */
+#map{flex:1;min-height:260px}
+
+/* ZONA INFO */
+.zona-info{padding:10px 14px;border-top:1px solid var(--border);background:var(--bg3);display:none;flex-wrap:wrap;gap:8px}
+.zchip{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.zchip strong{color:var(--lime)}
+
+/* PANEL DERECHO */
+	.right-panel{display:none;overflow-y:auto;background:var(--bg)}
+	.main.results-open .right-panel{display:block}
+.right-panel::-webkit-scrollbar{width:4px}
+.right-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ESTADO INICIAL */
+.idle-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;color:var(--muted)}
+.idle-icon{font-size:48px;margin-bottom:16px;opacity:.5}
+.idle-title{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--white)}
+
+/* LOADING */
+	.loading-panel{padding:32px;text-align:center}
+	.spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--lime);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+	@keyframes spin{to{transform:rotate(360deg)}}
+	.load-steps{margin-top:14px;text-align:left;display:inline-flex;flex-direction:column;gap:5px}
+	.lstep{font-size:12px;display:flex;align-items:center;gap:7px;color:var(--faint);transition:color .3s}
+	.lstep.active{color:var(--lime)}
+	.lstep.done{color:#4ade80}
+	.progress-widget{margin:18px auto 0;max-width:380px;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+	.progress-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+	.progress-title{font-size:12px;font-weight:800;color:var(--white)}
+	.progress-percent{font-size:18px;font-weight:900;color:var(--lime)}
+	.progress-track{height:8px;background:var(--bg3);border-radius:999px;overflow:hidden;margin-bottom:12px}
+	.progress-fill{height:100%;background:linear-gradient(90deg,var(--lime),var(--teal));border-radius:999px;transition:width .25s ease}
+	.progress-steps{display:flex;flex-direction:column;gap:7px}
+	.progress-step{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--faint)}
+	.progress-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);background:var(--bg3);font-size:10px;flex-shrink:0}
+	.progress-step.active{color:var(--lime)}
+	.progress-step.active .progress-dot{border-color:var(--lime);color:var(--lime)}
+	.progress-step.done{color:#4ade80}
+	.progress-step.done .progress-dot{background:#14532d;border-color:#16a34a;color:#4ade80}
+
+/* RESULTS */
+.results{padding:16px}
+.section-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--lime);margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.section-head:first-child{margin-top:0}
+
+/* METRIC CARDS */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:4px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.metric-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+.metric-value{font-size:20px;font-weight:800;line-height:1}
+.metric-sub{font-size:10px;color:var(--faint);margin-top:2px}
+
+/* FORECAST MINI */
+.forecast-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.fday{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:6px 3px;text-align:center}
+.fday-label{font-size:9px;color:var(--muted);margin-bottom:3px}
+.fday-hi{font-size:12px;font-weight:700;color:var(--red)}
+.fday-lo{font-size:11px;color:var(--blue)}
+.fday-mm{font-size:9px;color:var(--muted)}
+.fday.helada{border-color:#7f1d1d55;background:#7f1d1d11}
+
+/* LLUVIA MESES */
+.rain-bars{display:flex;gap:3px;align-items:flex-end;height:60px;margin-bottom:4px}
+.rain-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.rain-bar{width:100%;border-radius:3px 3px 0 0;background:var(--blue);min-height:2px;transition:height .6s}
+.rain-bar-label{font-size:8px;color:var(--faint)}
+
+/* SOIL */
+.soil-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.soil-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.soil-label{font-size:10px;color:var(--muted);margin-bottom:2px}
+.soil-value{font-size:15px;font-weight:700}
+.soil-sub{font-size:10px;color:var(--faint)}
+
+/* CULTIVOS */
+.cultivo-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.cultivo-card:hover{border-color:var(--lime);transform:translateX(2px)}
+.cultivo-card.top1{border-color:#fbbf2455}
+.cultivo-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cultivo-emoji{font-size:22px}
+.cultivo-name{font-size:14px;font-weight:700}
+.cultivo-prod{font-size:10px;color:var(--muted)}
+.cultivo-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.cbadge{font-size:9px;font-weight:600;padding:1px 6px;border-radius:8px;border:1px solid}
+.cb-low{background:#14532d22;color:#4ade80;border-color:#16a34a44}
+.cb-med{background:#78350f22;color:#fbbf24;border-color:#78350f44}
+.cb-high{background:#7f1d1d22;color:#fca5a5;border-color:#7f1d1d44}
+.cb-short{background:#1e3a5f22;color:#93c5fd;border-color:#1d4ed844}
+.cb-mlong{background:#14532d22;color:#6ee7b7;border-color:#0f6e5644}
+.score-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.score-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.score-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.score-num{font-size:12px;font-weight:700;min-width:32px;text-align:right}
+.meter-row{display:flex;align-items:center;gap:6px;font-size:11px}
+.meter-label{color:var(--muted);min-width:90px}
+.meter-track{flex:1;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.meter-fill{height:100%;border-radius:2px}
+.alert-mini{font-size:10px;background:#7f1d1d18;border:1px solid #7f1d1d44;border-radius:6px;padding:4px 8px;color:#fca5a5;margin-top:6px;display:flex;gap:5px}
+.rec-mini{font-size:10px;background:#14532d18;border:1px solid #14532d44;border-radius:6px;padding:4px 8px;color:#4ade80;margin-top:4px;display:flex;gap:5px}
+
+/* OPORTUNIDAD */
+.opportunity-card{background:var(--bg3);border:1px solid var(--lime);border-left:3px solid var(--lime);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.opp-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.opp-reason{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px}
+.opp-chips{display:flex;gap:6px;flex-wrap:wrap}
+.opp-chip{font-size:10px;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:2px 7px}
+
+/* EXPORT */
+.export-bar{padding:10px 14px;border-top:1px solid var(--border);background:var(--bg2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn-export{background:var(--lime);color:#06130a;border:none;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-json{background:var(--bg3);color:var(--lime2);border:1px solid var(--lime);padding:8px 14px;border-radius:8px;font-size:14px;cursor:pointer;font-family:var(--font)}
+
+/* ALERTS */
+.alert-box{border-radius:8px;padding:8px 12px;font-size:12px;display:flex;gap:7px;line-height:1.5;margin-bottom:6px}
+.alert-ok{background:#14532d18;border:1px solid #16a34a44;color:#4ade80}
+.alert-warn{background:#78350f18;border:1px solid #78350f44;color:#fbbf24}
+.alert-info{background:#1e3a5f18;border:1px solid #1d4ed844;color:#93c5fd}
+
+/* SAVE MODAL */
+.save-modal{display:none;position:fixed;inset:0;background:#00000090;z-index:9000;align-items:center;justify-content:center;padding:16px}
+.save-modal.open{display:flex}
+.save-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;max-width:420px;width:100%;box-shadow:0 8px 40px #00000070}
+.save-card h3{color:var(--lime);margin:0 0 14px;font-size:16px}
+.save-field{margin-bottom:11px}
+.save-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.3px}
+.save-field input,.save-field select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:8px;font-size:13px;font-family:var(--font);box-sizing:border-box}
+.save-field select option{background:var(--bg2)}
+.save-actions{display:flex;gap:8px;margin-top:16px}
+.save-actions button{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);border:none}
+.btn-save-ok{background:var(--lime);color:#06130a}
+.btn-save-ok:disabled{opacity:.5;cursor:not-allowed}
+.btn-save-cancel{background:var(--bg3);color:var(--fg);border:1px solid var(--border)!important}
+.save-msg{padding:8px 12px;border-radius:8px;font-size:12px;margin-top:10px;line-height:1.5;display:none}
+.save-msg.ok{background:#14532d18;border:1px solid #16a34a44;color:#4ade80;display:block}
+.save-msg.err{background:#78350f18;border:1px solid #78350f44;color:#fbbf24;display:block}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-dot">🌱</div>
+    <div>
+      <div class="logo-name">AgroSense</div>
+      <div class="logo-sub">Motor Fase 1 · Datos en tiempo real</div>
+    </div>
+  </div>
+  <a href="/dashboard" style="text-decoration:none;background:var(--lime);color:#06130a;font-weight:700;font-size:13px;padding:7px 16px;border-radius:8px;white-space:nowrap">📊 Dashboard</a>
+  <div class="api-status" id="apiStatus">
+    <a class="api-pill api-ok" href="/" style="text-decoration:none">Inicio</a>
+    <span class="api-pill api-wait" id="pill-geo">Geocoding</span>
+    <span class="api-pill api-wait" id="pill-fore">Forecast</span>
+    <span class="api-pill api-wait" id="pill-arch">Histórico</span>
+    <span class="api-pill api-wait" id="pill-soil">SoilGrids</span>
+    <span class="api-pill api-wait" id="pill-ai">Claude AI</span>
+    <button class="api-pill gps-chip" id="gpsChip" onclick="toggleGps()" title="Activar ubicación GPS">GPS · activar</button>
+  </div>
+</div>
+
+<div class="main" id="mainLayout">
+
+  <!-- PANEL IZQUIERDO: MAPA + BÚSQUEDA -->
+  <div class="left-panel">
+    <div class="field-tabs" role="tablist" aria-label="Herramientas de campo">
+      <button class="field-tab on" id="fieldTab-map" onclick="showFieldTab('map')" role="tab">🗺 Mapa</button>
+      <button class="field-tab" id="fieldTab-diagnostico" onclick="showFieldTab('diagnostico')" role="tab">📋 Diagnóstico</button>
+      <button class="field-tab" id="fieldTab-historial" onclick="showFieldTab('historial')" role="tab">📁 Historial</button>
+      <button class="field-tab" id="fieldTab-dispositivos" onclick="showFieldTab('dispositivos')" role="tab">📡 Dispositivos</button>
+    </div>
+
+    <section class="field-view on" id="fieldView-map" role="tabpanel">
+    <div class="search-area">
+      <div class="search-row">
+        <input class="search-input" id="searchInput" placeholder="Municipio, estado o ciudad..." onkeydown="if(event.key==='Enter')doSearch()"/>
+        <button class="btn btn-sm voice-btn" type="button" onclick="toggleVoiceSearch()" id="btnVoice" title="Decir ubicación con el micrófono" aria-label="Decir ubicación con el micrófono" aria-pressed="false">🎙</button>
+        <button class="btn btn-primary" onclick="doSearch()" id="btnSearch">Buscar</button>
+      </div>
+      <div class="voice-status" id="voiceStatus" role="status" aria-live="polite"></div>
+      <div class="tool-row">
+        <button class="btn btn-sm" onclick="setTool('pin')" id="toolPin">📍 Punto</button>
+        <button class="btn btn-sm" onclick="setTool('area')" id="toolArea" title="Dibuja el polígono de tu predio para delimitar el área de análisis">✏ Polígono</button>
+        <button class="btn btn-sm" onclick="setTool('poly')" id="toolPoly" title="Medir área y perímetro">📐 Medir</button>
+        <button class="btn btn-sm" onclick="toggleSatellite()" id="toolSatellite" title="Alternar vista de mapa y satélite">🛰 Satélite</button>
+        <button class="btn btn-sm" onclick="clearAll()">✕ Limpiar</button>
+        <span class="tool-hint" id="toolHint">Haz clic en el mapa o busca una zona</span>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="measurement-panel" id="measurementPanel">
+      <div class="measure-grid">
+        <div class="measure-item"><div class="measure-value" id="measureHa">0.000</div><div class="measure-label">hectáreas</div></div>
+        <div class="measure-item"><div class="measure-value" id="measureM2">0</div><div class="measure-label">m²</div></div>
+        <div class="measure-item"><div class="measure-value" id="measurePerimeter">0</div><div class="measure-label">perímetro m</div></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="undoMeasurePoint()">↶ Deshacer punto</button>
+        <button class="btn btn-sm" onclick="saveMeasurementDraft()" style="margin-left:auto;color:var(--lime2)">Guardar medición</button>
+      </div>
+    </div>
+
+    <div class="zona-info" id="zonaInfo">
+      <div class="zchip">Lat <strong id="infoLat">—</strong></div>
+      <div class="zchip">Lng <strong id="infoLng">—</strong></div>
+      <div class="zchip">Altitud <strong id="infoAlt">calculando...</strong></div>
+      <div class="zchip">Zona <strong id="infoZona">—</strong></div>
+    </div>
+
+    <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg2)">
+      <button class="btn btn-primary" id="btnAnalyze" onclick="runAnalysis()" disabled style="width:100%;justify-content:center;padding:11px">
+        Analizar zona con datos reales →
+      </button>
+    </div>
+    </section>
+
+    <section class="field-view" id="fieldView-diagnostico" role="tabpanel">
+      <div class="field-form">
+        <div style="font-size:16px;font-weight:800;margin-bottom:3px">Diagnóstico de campo</div>
+        <div class="field-intro">Registra las condiciones del lote. Se adjuntarán la ubicación GPS y la última medición del mapa.</div>
+        <div class="form-grid">
+          <div class="form-field"><label for="diagNombre">Nombre del lote *</label><input id="diagNombre" placeholder="Ej. Parcela norte"/></div>
+          <div class="form-field"><label for="diagLocalidad">Localidad</label><input id="diagLocalidad" placeholder="Municipio o comunidad"/></div>
+          <div class="form-field"><label for="diagSuelo">Tipo de suelo</label><select id="diagSuelo"><option value="">Seleccionar</option><option>Arcilloso</option><option>Arenoso</option><option>Limoso</option><option>Franco</option><option>Franco-arcilloso</option><option>Pedregoso</option><option>Otro</option></select></div>
+          <div class="form-field"><label for="diagCultivo">Cultivo</label><select id="diagCultivo"><option value="">Seleccionar</option><option>Ajo</option><option>Maíz</option><option>Tomate</option><option>Chile</option><option>Brócoli</option><option>Lavanda</option><option>Quinoa</option><option>Aguacate</option><option>Limón</option><option>Otro</option></select></div>
+        </div>
+        <div class="form-field"><label>Pendiente del terreno</label><div class="choice-grid" id="slopeChoices"><button class="choice-btn" data-value="plano" onclick="selectChoice(event,'slopeChoices')">Plano<br>0–3%</button><button class="choice-btn" data-value="suave" onclick="selectChoice(event,'slopeChoices')">Suave<br>3–8%</button><button class="choice-btn" data-value="pronunciada" onclick="selectChoice(event,'slopeChoices')">Alta<br>&gt;8%</button></div></div>
+        <div class="form-field"><label>Estado vegetativo · 1 crítico / 5 excelente</label><div class="scale-grid" id="healthChoices"><button class="scale-btn" data-value="1" onclick="selectChoice(event,'healthChoices')">1</button><button class="scale-btn" data-value="2" onclick="selectChoice(event,'healthChoices')">2</button><button class="scale-btn" data-value="3" onclick="selectChoice(event,'healthChoices')">3</button><button class="scale-btn" data-value="4" onclick="selectChoice(event,'healthChoices')">4</button><button class="scale-btn" data-value="5" onclick="selectChoice(event,'healthChoices')">5</button></div></div>
+        <div class="form-grid">
+          <div class="form-field"><label for="diagPlagas">Plagas observadas</label><input id="diagPlagas" placeholder="Ninguna, trips, roya..."/></div>
+          <div class="form-field"><label for="diagAgua">Acceso a agua</label><select id="diagAgua"><option value="">Seleccionar</option><option value="si">Sí</option><option value="limitado">Limitado</option><option value="no">No</option></select></div>
+          <div class="form-field"><label for="diagFuente">Fuente de agua</label><select id="diagFuente"><option value="">Seleccionar</option><option>Pozo</option><option>Presa</option><option>Canal</option><option>Río o arroyo</option><option>Captación de lluvia</option><option>Red pública</option><option>Otra</option></select></div>
+        </div>
+        <div class="form-field"><label>Fotografía de campo</label><div class="photo-box"><input id="diagPhoto" type="file" accept="image/*" capture="environment" onchange="handlePhoto(event)"/><div style="font-size:10px;color:var(--muted);margin-top:6px">Usa la cámara o selecciona una imagen</div><img class="photo-preview" id="photoPreview" alt="Vista previa del diagnóstico"/></div></div>
+        <div class="form-field"><label for="diagNotas">Notas de campo</label><textarea id="diagNotas" placeholder="Observaciones, daños, labores pendientes..."></textarea></div>
+        <div id="diagContext" class="field-intro"></div>
+      </div>
+      <div class="save-bar"><button class="btn btn-primary" onclick="saveDiagnosis()">Guardar diagnóstico</button></div>
+    </section>
+
+    <section class="field-view" id="fieldView-historial" role="tabpanel">
+      <div class="history-head"><div><div style="font-size:16px;font-weight:800">Historial de campo</div><div style="font-size:10px;color:var(--muted)" id="historyCount">0 registros</div></div><button class="btn btn-sm" onclick="exportFieldRecords()">⬇ JSON</button></div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+
+    <section class="field-view" id="fieldView-dispositivos" role="tabpanel">
+      <div class="device-wrap">
+        <div style="font-size:16px;font-weight:800;margin-bottom:3px">Centro de dispositivos</div>
+        <div class="device-intro">Integra receptores GNSS, sensores terrestres y archivos de vuelo para llevar coordenadas, recorridos y lecturas al mapa y al diagnóstico.</div>
+        <div class="safety-note">⚠ AgroSense solo lee telemetría y exporta rutas de referencia. No controla motores, piloto automático ni funciones críticas del dron.</div>
+        <div class="capability-grid">
+          <div class="capability"><strong id="serialCapability">Serial</strong>GNSS / NMEA</div>
+          <div class="capability"><strong id="bleCapability">Bluetooth</strong>Sensores BLE</div>
+          <div class="capability"><strong>Archivos</strong>Drone / GIS</div>
+        </div>
+
+        <div class="device-card">
+          <div class="device-card-title"><span>🛰 Receptor GNSS por cable</span><span class="device-status" id="serialStatus">Desconectado</span></div>
+          <div class="device-desc">Lee sentencias NMEA de receptores GPS/GNSS USB o Bluetooth que emulan puerto serial.</div>
+          <div class="device-fields"><select id="serialBaud"><option>4800</option><option selected>9600</option><option>38400</option><option>57600</option><option>115200</option></select><input id="serialLabel" placeholder="Nombre del equipo (opcional)"/></div>
+          <div class="device-actions"><button class="btn btn-primary" onclick="connectSerialDevice()" id="serialConnectBtn">Conectar GNSS</button><button class="btn btn-sm" onclick="disconnectSerialDevice()">Desconectar</button></div>
+          <div class="telemetry-log" id="serialLog">Esperando conexión...</div>
+        </div>
+
+        <div class="device-card">
+          <div class="device-card-title"><span>📶 Sensor Bluetooth BLE</span><span class="device-status" id="bleStatus">Desconectado</span></div>
+          <div class="device-desc">Conecta sensores de humedad, temperatura u otros equipos GATT. El fabricante debe proporcionar los UUID del servicio y la característica.</div>
+          <div class="device-fields"><input id="bleServiceUuid" placeholder="UUID del servicio GATT"/><input id="bleCharacteristicUuid" placeholder="UUID de la característica"/></div>
+          <div class="device-actions"><button class="btn btn-primary" onclick="connectBleDevice()">Buscar sensor</button><button class="btn btn-sm" onclick="disconnectBleDevice()">Desconectar</button></div>
+          <div class="telemetry-log" id="bleLog">Admite texto, JSON o valores separados por comas.</div>
+        </div>
+
+        <div class="device-card">
+          <div class="device-card-title"><span>🚁 Telemetría de dron o GIS</span><span class="device-status" id="fileStatus">Sin archivo</span></div>
+          <div class="device-desc">Importa recorridos, puntos y polígonos desde GeoJSON, GPX, KML o CSV con columnas lat/lon.</div>
+          <input id="telemetryFile" type="file" accept=".json,.geojson,.gpx,.kml,.csv,application/json,text/csv" onchange="importTelemetryFile(event)" style="width:100%;margin-bottom:9px"/>
+          <div class="device-actions"><button class="btn btn-sm" onclick="showFieldTab('map')">Ver en mapa</button><button class="btn btn-sm danger-btn" onclick="clearDeviceLayer()">Quitar capa</button></div>
+          <div class="telemetry-log" id="fileLog">Formatos: FeatureCollection GeoJSON, track GPX, coordenadas KML o CSV.</div>
+        </div>
+
+        <div class="device-card">
+          <div class="device-card-title"><span>🧭 Ruta de levantamiento</span><span class="device-status">GeoJSON</span></div>
+          <div class="device-desc">Genera una ruta perimetral de referencia usando la medición actual. Impórtala después en software compatible y valida restricciones locales antes de volar.</div>
+          <div class="device-fields"><select id="missionType"><option value="aerial_survey">Diagnóstico aéreo</option><option value="perimeter">Medición de perímetro</option><option value="terrestrial_scout">Recorrido terrestre</option></select><input id="missionAltitude" type="number" min="5" max="120" value="60" placeholder="Altura en metros"/></div>
+          <div class="device-actions"><button class="btn btn-primary" onclick="exportSurveyRoute()">Exportar ruta GeoJSON</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- PANEL DERECHO: RESULTADOS -->
+  <div class="right-panel" id="rightPanel">
+    <div class="idle-state" id="idleState">
+      <div class="idle-icon">🛰</div>
+      <div class="idle-title">Selecciona una zona para analizar</div>
+      <div style="font-size:13px;max-width:300px;line-height:1.6">Haz clic en el mapa o busca un municipio. El sistema consultará datos reales de clima, suelo y mercado en tiempo real.</div>
+    </div>
+    <div id="loadingPanel" style="display:none" class="loading-panel">
+      <div class="spin"></div>
+      <div style="font-size:13px;font-weight:600">Consultando APIs en tiempo real...</div>
+      <div id="reactProgressWidget"></div>
+    </div>
+    <div id="resultsPanel" style="display:none">
+      <div class="results" id="resultsContent"></div>
+      <div class="export-bar">
+        <button class="btn-export" onclick="openSaveModal()" style="background:var(--lime2)">💾 Guardar parcela</button>
+        <button class="btn-export" onclick="exportPDF()">⬇ PDF</button>
+        <button class="btn-json" onclick="exportJSON()">{ } JSON</button>
+        <span style="font-size:10px;color:var(--faint);margin-left:auto" id="generadoEn"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-modal" id="detailModal" onclick="if(event.target===this)closeRecordDetail()"><div class="detail-card" id="detailCard"></div></div>
+<div class="toast" id="fieldToast" role="status" aria-live="polite"></div>
+
+<!-- ── MODAL: GUARDAR PARCELA + CICLO ── -->
+<div class="save-modal" id="saveModal" onclick="if(event.target===this)closeSaveModal()">
+  <div class="save-card">
+    <h3>💾 Guardar análisis como parcela</h3>
+    <div class="save-field">
+      <label>Nombre de la parcela</label>
+      <input id="saveNombre" type="text" placeholder="Mi parcela"/>
+    </div>
+    <div class="save-field">
+      <label>Coordenadas y altitud</label>
+      <input id="saveCoords" type="text" readonly style="opacity:.55"/>
+    </div>
+    <div class="save-field">
+      <label>Iniciar ciclo con cultivo</label>
+      <select id="saveCultivoSel"></select>
+    </div>
+    <div id="saveCicloFields" style="display:none">
+      <div class="save-field">
+        <label>Fecha de siembra</label>
+        <input id="saveFechaSiembra" type="date"/>
+      </div>
+      <div class="save-field">
+        <label>Presupuesto estimado (MXN)</label>
+        <input id="savePresupuesto" type="number" min="0" placeholder="0"/>
+      </div>
+    </div>
+    <div class="save-msg" id="saveMsg"></div>
+    <!-- Login/registro inline cuando no hay sesión real -->
+    <div id="saveAuthPanel" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-align:center" id="saveAuthMsg">Inicia sesión o crea una cuenta para guardar</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button onclick="toggleSaveAuthMode('login')" id="btnAuthTabLogin" style="flex:1;padding:6px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:var(--lime);color:#06130a;border:none">Iniciar sesión</button>
+        <button onclick="toggleSaveAuthMode('register')" id="btnAuthTabReg" style="flex:1;padding:6px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--fg);border:1px solid var(--border)">Crear cuenta</button>
+      </div>
+      <div id="saveAuthRegName" style="display:none;margin-bottom:6px">
+        <input id="saveRegNombre" type="text" placeholder="Tu nombre" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:7px 10px;border-radius:7px;font-size:12px;font-family:var(--font);box-sizing:border-box"/>
+      </div>
+      <input id="saveAuthEmail" type="email" placeholder="Email" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:7px 10px;border-radius:7px;font-size:12px;font-family:var(--font);box-sizing:border-box;margin-bottom:6px"/>
+      <input id="saveAuthPass" type="password" placeholder="Contraseña (mín. 8 caracteres)" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:7px 10px;border-radius:7px;font-size:12px;font-family:var(--font);box-sizing:border-box;margin-bottom:8px"/>
+      <button onclick="doSaveAuth()" id="btnDoAuth" style="width:100%;padding:8px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;background:var(--lime);color:#06130a;border:none">Iniciar sesión</button>
+      <div id="saveAuthError" style="display:none;color:#fbbf24;font-size:11px;margin-top:6px;text-align:center"></div>
+    </div>
+    <div id="saveLoginNotice" style="display:none"></div>
+    <div class="save-actions">
+      <button class="btn-save-cancel" onclick="closeSaveModal()">Cancelar</button>
+      <button class="btn-save-ok" id="btnSaveOk" onclick="doSaveParcela()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MESES_S = ["E","F","M","A","M","J","J","A","S","O","N","D"];
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const DIAS_S = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const HOY = new Date().getMonth();
+const CATEGORY_LABELS = {
+  arbol_frutal:"Frutas / frutales",
+  hortaliza:"Verduras / hortalizas",
+  aromatica:"Hierbas / aromáticas",
+  grano:"Cereales / granos",
+  leguminosa:"Leguminosas",
+  arbol_funcional:"Árboles funcionales",
+  cultivo:"Otros cultivos"
+};
+const CATEGORY_ORDER = ["arbol_frutal","hortaliza","aromatica","grano","leguminosa","arbol_funcional","cultivo"];
+const PROGRESS_STEPS = [
+  {id:1,label:"Geocodificando zona"},
+  {id:2,label:"Obteniendo pronóstico 16 días"},
+  {id:3,label:"Cargando histórico climático 12 meses"},
+  {id:4,label:"Analizando suelo (SoilGrids)"},
+  {id:5,label:"Calculando viabilidad de cultivos y frutales"},
+  {id:6,label:"Analizando oportunidades de mercado"}
+];
+let progressRoot=null;
+let progressSteps=PROGRESS_STEPS.map(step=>({...step,status:"pending"}));
+
+const APIS = {
+  geocoding: "https://geocoding-api.open-meteo.com/v1/search",
+  forecast:  "https://api.open-meteo.com/v1/forecast",
+  archive:   "https://archive-api.open-meteo.com/v1/archive",
+  soilgrids: "https://rest.isric.org/soilgrids/v2.0/properties/query",
+  claude:    "https://api.anthropic.com/v1/messages",
+};
+
+const CULTIVOS_DB = [
+  {id:"ajo",n:"Ajo",e:"🧄",tMin:0,tMax:25,tOpt:15,llMin:300,llMax:600,aMin:1200,aMax:2800,hela:"sensible",ciclo:9,tipoCiclo:"largo",siem:[9,10,11],cosecha:[6,7],pF:25,pT:800,cHa:123000,tipoCosto:"alto",prod:"Ajo negro gourmet",fumi:6,plan:"free"},
+  {id:"lavanda",n:"Lavanda",e:"💜",tMin:-10,tMax:30,tOpt:18,llMin:400,llMax:700,aMin:1500,aMax:3000,hela:"tolerante",ciclo:12,tipoCiclo:"largo",siem:[2,3,4],cosecha:[5,6,7],pF:80,pT:1800,cHa:85000,tipoCosto:"medio",prod:"Aceite esencial",fumi:2,plan:"free"},
+  {id:"quinoa",n:"Quinoa",e:"🌾",tMin:5,tMax:35,tOpt:20,llMin:250,llMax:500,aMin:1500,aMax:4000,hela:"moderado",ciclo:5,tipoCiclo:"medio",siem:[2,3,9,10],cosecha:[6,7,0,1],pF:35,pT:280,cHa:42000,tipoCosto:"bajo",prod:"Grano limpio · harina",fumi:2,plan:"free"},
+  {id:"brocoli",n:"Brócoli",e:"🥦",tMin:7,tMax:24,tOpt:16,llMin:400,llMax:600,aMin:1000,aMax:2500,hela:"moderado",ciclo:3,tipoCiclo:"corto",siem:[7,8,9],cosecha:[11,0,1],pF:18,pT:95,cHa:35000,tipoCosto:"bajo",prod:"Congelado IQF",fumi:5,plan:"pro"},
+  {id:"moringa",n:"Moringa",e:"🌿",tMin:18,tMax:40,tOpt:28,llMin:500,llMax:1500,aMin:0,aMax:1500,hela:"muy sensible",ciclo:8,tipoCiclo:"medio",siem:[3,4,5],cosecha:[8,9,10],pF:60,pT:900,cHa:68000,tipoCosto:"medio",prod:"Polvo · cápsulas",fumi:3,plan:"pro"},
+  {id:"maiz",n:"Maíz",e:"🌽",tMin:10,tMax:40,tOpt:25,llMin:500,llMax:800,aMin:0,aMax:2800,hela:"sensible",ciclo:5,tipoCiclo:"medio",siem:[4,5,6],cosecha:[9,10],pF:5,pT:22,cHa:28000,tipoCosto:"bajo",prod:"Harina nixtamal",fumi:3,plan:"free"},
+  {id:"chile",n:"Chile",e:"🌶",tMin:15,tMax:35,tOpt:25,llMin:400,llMax:700,aMin:500,aMax:2200,hela:"muy sensible",ciclo:4,tipoCiclo:"corto",siem:[2,3,8,9],cosecha:[5,6,11,0],pF:22,pT:380,cHa:55000,tipoCosto:"medio",prod:"Chile seco · polvo",fumi:7,plan:"pro"},
+  {id:"tomate",n:"Tomate",e:"🍅",tMin:10,tMax:35,tOpt:22,llMin:400,llMax:700,aMin:0,aMax:2500,hela:"muy sensible",ciclo:4,tipoCiclo:"corto",siem:[1,2,8,9],cosecha:[5,6,11,0],pF:12,pT:85,cHa:65000,tipoCosto:"medio",prod:"Puré · deshidratado",fumi:8,plan:"free"},
+  {id:"aguacate_hass",n:"Aguacate Hass",e:"🥑",tMin:10,tMax:30,tOpt:22,llMin:700,llMax:1400,aMin:800,aMax:2400,hela:"muy sensible",ciclo:36,tipoCiclo:"largo",siem:[5,6,7],cosecha:[9,10,11],pF:45,pT:180,cHa:180000,tipoCosto:"alto",prod:"Aceite · pulpa congelada",fumi:5,plan:"free"},
+  {id:"limon_persa",n:"Limón persa",e:"🍋",tMin:12,tMax:35,tOpt:26,llMin:800,llMax:1800,aMin:0,aMax:1200,hela:"muy sensible",ciclo:30,tipoCiclo:"largo",siem:[5,6,7],cosecha:[0,1,2,8,9],pF:18,pT:110,cHa:125000,tipoCosto:"alto",prod:"Aceite esencial · jugo",fumi:6,plan:"free"},
+  {id:"granada",n:"Granada",e:"🔴",tMin:5,tMax:38,tOpt:25,llMin:250,llMax:700,aMin:0,aMax:2200,hela:"moderado",ciclo:30,tipoCiclo:"largo",siem:[1,2,6,7],cosecha:[7,8,9],pF:35,pT:220,cHa:98000,tipoCosto:"medio",prod:"Jugo antioxidante · arilos",fumi:4,plan:"pro"},
+  {id:"olivo",n:"Olivo",e:"🫒",tMin:2,tMax:38,tOpt:22,llMin:250,llMax:650,aMin:0,aMax:1800,hela:"tolerante",ciclo:48,tipoCiclo:"largo",siem:[1,2,10,11],cosecha:[9,10,11],pF:20,pT:160,cHa:110000,tipoCosto:"alto",prod:"Aceite de oliva",fumi:3,plan:"pro"},
+];
+
+function scoreColor(s){return s>=75?"#84cc16":s>=50?"#f59e0b":"#ef4444"}
+function costBadge(t){return t==="bajo"?"cb-low":t==="medio"?"cb-med":"cb-high"}
+function cicloClass(t){return t==="corto"?"cb-short":"cb-mlong"}
+function scoreColor2(s){return s>=80?"#84cc16":s>=60?"#f59e0b":"#ef4444"}
+function inferCategory(c){
+  if(c.categoria||c.category||c.cat)return c.categoria||c.category||c.cat;
+  if(["aguacate_hass","limon_persa","granada","olivo","higo","durazno"].includes(c.id))return"arbol_frutal";
+  if(["ajo","brocoli","chile","tomate"].includes(c.id))return"hortaliza";
+  if(["lavanda","romero","albahaca"].includes(c.id))return"aromatica";
+  if(c.id==="moringa")return"arbol_funcional";
+  if(["maiz","quinoa","amaranto"].includes(c.id))return"grano";
+  if(c.id==="garbanzo")return"leguminosa";
+  return"cultivo";
+}
+function categoryLabel(c){return CATEGORY_LABELS[inferCategory(c)]||CATEGORY_LABELS.cultivo}
+function categorySummary(crops){
+  const counts=new Map();
+  crops.forEach(c=>counts.set(inferCategory(c),(counts.get(inferCategory(c))||0)+1));
+  return CATEGORY_ORDER.filter(k=>counts.has(k)).map(k=>`<span class="badge badge-neutral">${CATEGORY_LABELS[k]}: <strong style="color:var(--lime);margin-left:3px">${counts.get(k)}</strong></span>`).join("");
+}
+
+function calcScore(c, forecast, rain, alt){
+  const {tProm7d,tMin7d,precip16d,alertaHelada,heladasN} = forecast.resumen;
+  let score=100; const al=[],rc=[];
+  if(tProm7d < c.tMin){score-=Math.min(35,(c.tMin-tProm7d)*4);al.push(`Temp ${tProm7d}°C bajo mínimo (${c.tMin}°C)`);}
+  else if(tProm7d > c.tMax){score-=Math.min(28,(tProm7d-c.tMax)*3);al.push(`Temp ${tProm7d}°C sobre máximo (${c.tMax}°C)`);}
+  else if(Math.abs(tProm7d-c.tOpt)<4){rc.push(`Temperatura cercana al óptimo (${c.tOpt}°C)`);}
+  if(alertaHelada){const pen={muy_sensible:40,sensible:25,moderado:12,tolerante:4}[c.hela.replace(" ","_")]||15;score-=pen;al.push(`Heladas previstas (${heladasN} días) — ${c.hela}`);}
+  else if(tMin7d<5&&c.hela!=="tolerante"){score-=7;rc.push(`Noches frías (${tMin7d}°C) — monitorear`);}
+  if(rain.totalLluvia<c.llMin){score-=Math.min(25,((c.llMin-rain.totalLluvia)/c.llMin)*28);al.push(`Lluvia anual ${rain.totalLluvia}mm bajo mínimo (${c.llMin}mm)`);}
+  else if(rain.totalLluvia>c.llMax){score-=12;al.push(`Exceso hídrico ${rain.totalLluvia}mm`);}
+  else{rc.push(`Lluvia anual ${rain.totalLluvia}mm en rango óptimo`);}
+  if(precip16d>100){score-=7;al.push(`Lluvia intensa próximas 2 semanas (${precip16d}mm)`);}
+  if(alt!==null){
+    if(alt<c.aMin){score-=9;al.push(`Altitud ${Math.round(alt)}m bajo mínimo (${c.aMin}m)`);}
+    else if(alt>c.aMax){score-=7;al.push(`Altitud ${Math.round(alt)}m sobre máximo (${c.aMax}m)`);}
+    else{rc.push(`Altitud ${Math.round(alt)}m en rango óptimo`);}
+  }
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  const nivel=score>=80?"Excelente":score>=65?"Viable":score>=45?"Moderado":"Riesgo alto";
+  return{score,nivel,alertas:al,recs:rc};
+}
+
+function normalizeBackendScore(crop){
+  const local=CULTIVOS_DB.find(c=>c.id===crop.id)||{};
+  const dur=Number(crop.duracion||local.ciclo||6);
+  const categoria=crop.categoria||crop.category||local.categoria||inferCategory(crop);
+  const precioFresco=Number(crop.precioFresco||local.pF||20);
+  const precioTransformado=Number(crop.precioTransformado||local.pT||Math.round(precioFresco*4));
+  const tipoCosto=local.tipoCosto || (categoria==="arbol_frutal"||dur>24?"alto":dur>8?"medio":"bajo");
+  const nivelMap={alta:"Excelente",media:"Viable",baja:"Riesgo alto"};
+  return {
+    ...local,
+    id:crop.id,
+    n:crop.nombre||local.n||crop.id,
+    e:crop.emoji||local.e||"🌱",
+    categoria,
+    prod:crop.producto||local.prod||"Producto de valor agregado",
+    ciclo:dur,
+    tipoCiclo:dur<=4?"corto":dur<=12?"medio":"largo",
+    pF:precioFresco,
+    pT:precioTransformado,
+    tipoCosto,
+    fumi:local.fumi ?? (categoria==="arbol_frutal"?4:3),
+    score:Number(crop.score||0),
+    nivel:nivelMap[crop.nivel]||crop.nivel||"Viable",
+    alertas:crop.alertas||[],
+    recs:crop.recomendaciones||crop.recs||[]
+  };
+}
+
+// Normaliza un crop del contrato v1 al formato de render
+function normalizeContractCrop(crop){
+  const local=CULTIVOS_DB.find(c=>c.id===crop.id)||{};
+  const dur=Number(crop.cycle_months||local.ciclo||6);
+  const categoria=crop.category||inferCategory({...local,id:crop.id});
+  const tipoCosto=local.tipoCosto||(categoria==="arbol_frutal"||dur>24?"alto":dur>8?"medio":"bajo");
+  const nivelMap={alta:"Excelente",media:"Viable",baja:"Riesgo alto"};
+  return{
+    ...local,
+    id:crop.id,
+    n:crop.name||local.n||crop.id,
+    e:crop.emoji||local.e||"🌱",
+    categoria,
+    prod:crop.product||local.prod||"Producto de valor agregado",
+    ciclo:dur,
+    tipoCiclo:dur<=4?"corto":dur<=12?"medio":"largo",
+    pF:Number(crop.fresh_price_mxn||local.pF||20),
+    pT:Number(crop.transformed_price_mxn||local.pT||80),
+    tipoCosto,
+    fumi:local.fumi??(categoria==="arbol_frutal"?4:3),
+    score:Number(crop.score||0),
+    nivel:nivelMap[crop.level]||crop.level||"Viable",
+    alertas:crop.alerts||[],
+    recs:crop.recommendations||[]
+  };
+}
+
+// ── MAPA ──
+let map, marker, polygon, polyPoints=[], measureMarkers=[], currentTool="pin", stream=null;
+let streetLayer, satelliteLayer, labelsLayer, isSatellite=false;
+let selLat=null, selLng=null, selNombre="", selAlt=null;
+let selArea=0, lastMeasurement=null;
+let gpsWatchId=null, gpsMarker=null, gpsAccuracyCircle=null, currentGps=null;
+let diagnosisPhoto=null;
+let serialPort=null,serialReader=null,serialReading=false,serialBuffer="";
+let bleDevice=null,bleCharacteristic=null;
+let deviceLayer=null,deviceTrackLayer=null,deviceMarker=null,deviceTrack=[];
+let currentDevicePosition=null,deviceContext=null,deviceReadings=[];
+let lastResult=null;
+const FIELD_RECORDS_KEY="agrosense_field_records_v1";
+const FIELD_MEASUREMENT_KEY="agrosense_measurement_draft_v1";
+
+function initMap(){
+  map=L.map("map",{zoomControl:true}).setView([23.5,-102.5],5);
+  streetLayer=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap",maxZoom:19}).addTo(map);
+  satelliteLayer=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{attribution:"Tiles © Esri",maxZoom:19});
+  labelsLayer=L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{attribution:"Labels © Esri",maxZoom:19});
+  L.control.layers({"Mapa":streetLayer,"Satélite":satelliteLayer},{"Etiquetas":labelsLayer},{position:"topright",collapsed:true}).addTo(map);
+  map.on("click",onMapClick);
+}
+
+function toggleSatellite(){
+  const btn=document.getElementById("toolSatellite");
+  if(!map||!streetLayer||!satelliteLayer)return;
+  isSatellite=!isSatellite;
+  if(isSatellite){
+    map.removeLayer(streetLayer);
+    satelliteLayer.addTo(map);
+    labelsLayer.addTo(map);
+    btn.style.borderColor="var(--lime)";
+    btn.textContent="🗺 Mapa";
+    btn.title="Cambiar a vista de mapa";
+  }else{
+    map.removeLayer(satelliteLayer);
+    map.removeLayer(labelsLayer);
+    streetLayer.addTo(map);
+    btn.style.borderColor="var(--border)";
+    btn.textContent="🛰 Satélite";
+    btn.title="Cambiar a vista satelital";
+  }
+}
+
+function onMapClick(e){
+  if(currentTool==="area"){onAreaClick(e.latlng.lat,e.latlng.lng);return;}
+  if(currentTool==="pin") placePin(e.latlng.lat,e.latlng.lng);
+  else addPolyPoint(e.latlng);
+}
+
+function placePin(lat,lng,nombre=""){
+  if(marker)map.removeLayer(marker);
+  if(polygon){map.removeLayer(polygon);polygon=null;}
+  measureMarkers.forEach(item=>map.removeLayer(item));measureMarkers=[];polyPoints=[];selArea=0;
+  document.getElementById("measurementPanel").classList.remove("on");
+  const icon=L.divIcon({html:`<div style="background:var(--lime,#84cc16);width:16px;height:16px;border-radius:50%;border:3px solid #0a1f10;box-shadow:0 0 0 2px #84cc16"></div>`,iconAnchor:[8,8],className:""});
+  marker=L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b style="font-size:12px">${nombre||"Zona seleccionada"}</b><br><span style="font-size:10px">${lat.toFixed(4)}, ${lng.toFixed(4)}</span>`).openPopup();
+  selLat=lat; selLng=lng; selNombre=nombre||`${lat.toFixed(4)}°N, ${Math.abs(lng).toFixed(4)}°O`;
+  updateZonaInfo(lat,lng);
+  document.getElementById("btnAnalyze").disabled=false;
+  document.getElementById("toolHint").textContent="Zona seleccionada — clic en 'Analizar' para obtener datos reales";
+}
+
+function addPolyPoint(ll){
+  polyPoints.push(ll);
+  if(polygon)map.removeLayer(polygon);
+  const numberIcon=L.divIcon({html:`<div class="number-marker">${polyPoints.length}</div>`,iconSize:[24,24],iconAnchor:[12,12],className:""});
+  measureMarkers.push(L.marker(ll,{icon:numberIcon,interactive:false}).addTo(map));
+  document.getElementById("measurementPanel").classList.add("on");
+  if(polyPoints.length>1){
+    polygon=L.polygon(polyPoints,{color:"#84cc16",weight:2,fillOpacity:.15}).addTo(map);
+    const clat=polyPoints.reduce((s,p)=>s+p.lat,0)/polyPoints.length;
+    const clng=polyPoints.reduce((s,p)=>s+p.lng,0)/polyPoints.length;
+    selLat=clat; selLng=clng; selNombre=`Área personalizada (${polyPoints.length} puntos)`;
+    updateZonaInfo(clat,clng);
+    document.getElementById("btnAnalyze").disabled=false;
+  }
+  updateMeasurement();
+}
+
+function haversineMeters(a,b){
+  const R=6371008.8;
+  const toRad=value=>value*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat),dLng=toRad(b.lng-a.lng);
+  const lat1=toRad(a.lat),lat2=toRad(b.lat);
+  const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+
+function calculateMeasurement(points){
+  if(points.length<2) return {areaM2:0,areaHa:0,perimeterM:0};
+  const origin=points[0];
+  const lat0=origin.lat*Math.PI/180;
+  const projected=points.map(point=>({
+    x:(point.lng-origin.lng)*Math.PI/180*6371008.8*Math.cos(lat0),
+    y:(point.lat-origin.lat)*Math.PI/180*6371008.8
+  }));
+  let twiceArea=0;
+  if(points.length>=3){
+    for(let i=0;i<projected.length;i++){
+      const next=projected[(i+1)%projected.length];
+      twiceArea+=projected[i].x*next.y-next.x*projected[i].y;
+    }
+  }
+  let perimeter=0;
+  for(let i=1;i<points.length;i++) perimeter+=haversineMeters(points[i-1],points[i]);
+  if(points.length>=3) perimeter+=haversineMeters(points[points.length-1],points[0]);
+  const areaM2=Math.abs(twiceArea)/2;
+  return {areaM2,areaHa:areaM2/10000,perimeterM:perimeter};
+}
+
+function updateMeasurement(){
+  const measurement=calculateMeasurement(polyPoints);
+  selArea=measurement.areaHa;
+  document.getElementById("measureHa").textContent=measurement.areaHa.toFixed(3);
+  document.getElementById("measureM2").textContent=Math.round(measurement.areaM2).toLocaleString("es-MX");
+  document.getElementById("measurePerimeter").textContent=Math.round(measurement.perimeterM).toLocaleString("es-MX");
+  document.getElementById("toolHint").textContent=polyPoints.length<3?`${polyPoints.length} punto(s) · agrega al menos 3 para calcular área`:`${polyPoints.length} puntos · ${measurement.areaHa.toFixed(3)} ha`;
+  return measurement;
+}
+
+function undoMeasurePoint(){
+  if(!polyPoints.length)return;
+  polyPoints.pop();
+  const removed=measureMarkers.pop();
+  if(removed)map.removeLayer(removed);
+  if(polygon)map.removeLayer(polygon);
+  polygon=polyPoints.length>1?L.polygon(polyPoints,{color:"#84cc16",weight:2,fillOpacity:.15}).addTo(map):null;
+  if(!polyPoints.length)document.getElementById("measurementPanel").classList.remove("on");
+  updateMeasurement();
+}
+
+function saveMeasurementDraft(){
+  if(polyPoints.length<3){showFieldToast("Agrega al menos 3 puntos para guardar el área.");return;}
+  const metrics=updateMeasurement();
+  lastMeasurement={...metrics,points:polyPoints.map(({lat,lng})=>({lat,lng})),savedAt:new Date().toISOString()};
+  localStorage.setItem(FIELD_MEASUREMENT_KEY,JSON.stringify(lastMeasurement));
+  showFieldToast(`Medición guardada: ${metrics.areaHa.toFixed(3)} ha`);
+  updateDiagnosisContext();
+}
+
+async function updateZonaInfo(lat,lng){
+  document.getElementById("zonaInfo").style.display="flex";
+  document.getElementById("infoLat").textContent=lat.toFixed(5);
+  document.getElementById("infoLng").textContent=Math.abs(lng).toFixed(5);
+  document.getElementById("infoZona").textContent=selNombre||"—";
+  document.getElementById("infoAlt").textContent="calculando...";
+  try{
+    const r=await fetch(`${APIS.archive}?latitude=${lat}&longitude=${lng}&start_date=2024-01-01&end_date=2024-01-01&daily=temperature_2m_max&timezone=auto`);
+    const d=await r.json();
+    selAlt=d.elevation ? Math.round(d.elevation) : null;
+    document.getElementById("infoAlt").textContent=selAlt?`${selAlt} msnm`:"N/D";
+  }catch{document.getElementById("infoAlt").textContent="N/D";}
+}
+
+// Polígono de área para análisis
+let areaPoints=[], areaPolygon=null, areaMarkers=[];
+
+function setTool(t){
+  currentTool=t;
+  document.getElementById("toolPin").style.borderColor  = t==="pin" ?"var(--lime)":"var(--border)";
+  document.getElementById("toolPoly").style.borderColor = t==="poly"?"var(--lime)":"var(--border)";
+  document.getElementById("toolArea").style.borderColor = t==="area"?"var(--lime)":"var(--border)";
+  const hints={pin:"Haz clic en el mapa para seleccionar un punto",poly:"Toca el mapa para agregar puntos numerados al perímetro.",area:"Clic para agregar vértices del predio — doble clic para cerrar el polígono"};
+  document.getElementById("toolHint").textContent=hints[t]||hints.pin;
+  if(t==="poly") map.on("dblclick",e=>{L.DomEvent.stop(e);setTool("pin");});
+  if(t==="area"){
+    // Limpiar área anterior
+    areaPoints=[];
+    areaMarkers.forEach(m=>map.removeLayer(m)); areaMarkers=[];
+    if(areaPolygon){map.removeLayer(areaPolygon);areaPolygon=null;}
+    map.on("dblclick",closeAreaPolygon);
+  } else {
+    map.off("dblclick",closeAreaPolygon);
+  }
+}
+
+function onAreaClick(lat,lng){
+  areaPoints.push([lat,lng]);
+  const m=L.circleMarker([lat,lng],{radius:5,color:"#84cc16",fillColor:"#84cc16",fillOpacity:1}).addTo(map);
+  areaMarkers.push(m);
+  if(areaPolygon) map.removeLayer(areaPolygon);
+  if(areaPoints.length>=3){
+    areaPolygon=L.polygon(areaPoints,{color:"#84cc16",weight:2,fillColor:"#84cc16",fillOpacity:0.15}).addTo(map);
+  }
+  document.getElementById("toolHint").textContent=`Polígono: ${areaPoints.length} puntos — doble clic para cerrar`;
+}
+
+function closeAreaPolygon(e){
+  L.DomEvent.stop(e);
+  if(areaPoints.length<3){showFieldToast("Agrega al menos 3 puntos.");return;}
+  // Centroide
+  const lat=areaPoints.reduce((s,p)=>s+p[0],0)/areaPoints.length;
+  const lng=areaPoints.reduce((s,p)=>s+p[1],0)/areaPoints.length;
+  // Área (Shoelace en metros)
+  const R=6371000;
+  let area=0;
+  for(let i=0;i<areaPoints.length;i++){
+    const j=(i+1)%areaPoints.length;
+    const xi=areaPoints[i][1]*Math.PI/180*R*Math.cos(areaPoints[i][0]*Math.PI/180);
+    const yi=areaPoints[i][0]*Math.PI/180*R;
+    const xj=areaPoints[j][1]*Math.PI/180*R*Math.cos(areaPoints[j][0]*Math.PI/180);
+    const yj=areaPoints[j][0]*Math.PI/180*R;
+    area+=xi*yj-xj*yi;
+  }
+  const ha=+(Math.abs(area/2)/10000).toFixed(3);
+  selArea=ha;
+  // Mostrar en el panel de medición
+  polyPoints=areaPoints.map(p=>({lat:p[0],lng:p[1]}));
+  document.getElementById("measurementPanel").classList.add("on");
+  document.getElementById("measureHa").textContent=ha.toFixed(3);
+  document.getElementById("measureM2").textContent=Math.round(ha*10000).toLocaleString("es-MX");
+  // Perímetro
+  let perim=0;
+  for(let i=0;i<areaPoints.length;i++){
+    const j=(i+1)%areaPoints.length;
+    perim+=haversineMeters({lat:areaPoints[i][0],lng:areaPoints[i][1]},{lat:areaPoints[j][0],lng:areaPoints[j][1]});
+  }
+  document.getElementById("measurePerimeter").textContent=Math.round(perim).toLocaleString("es-MX");
+  // Pin en centroide
+  placePin(lat,lng,selNombre||`Predio ${ha} ha`);
+  document.getElementById("toolHint").textContent=`✓ Polígono cerrado — ${ha} ha · Centroide colocado para análisis`;
+  setTool("pin");
+}
+
+function clearAll(){
+  if(marker){map.removeLayer(marker);marker=null;}
+  if(polygon){map.removeLayer(polygon);polygon=null;}
+  if(areaPolygon){map.removeLayer(areaPolygon);areaPolygon=null;}
+  areaMarkers.forEach(m=>map.removeLayer(m));areaMarkers=[];areaPoints=[];
+  measureMarkers.forEach(item=>map.removeLayer(item));measureMarkers=[];
+  polyPoints=[]; selLat=selLng=null; selNombre=""; selAlt=null;selArea=0;
+  document.getElementById("measurementPanel").classList.remove("on");
+  updateMeasurement();
+  document.getElementById("zonaInfo").style.display="none";
+  document.getElementById("btnAnalyze").disabled=true;
+  document.getElementById("toolHint").textContent="Haz clic en el mapa o busca una zona";
+  showIdle();
+}
+
+// ── GPS EN TIEMPO REAL ──
+function toggleGps(){
+  if(gpsWatchId!==null){
+    navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;
+    document.getElementById("gpsChip").classList.remove("live");
+    document.getElementById("gpsChip").textContent="GPS · activar";
+    return;
+  }
+  if(!navigator.geolocation){showFieldToast("Este equipo no ofrece ubicación GPS.");return;}
+  const chip=document.getElementById("gpsChip");chip.textContent="GPS · buscando...";
+  gpsWatchId=navigator.geolocation.watchPosition(updateGpsPosition,gpsError,{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+}
+
+function updateGpsPosition(position){
+  const {latitude,longitude,accuracy}=position.coords;
+  currentGps={lat:latitude,lng:longitude,accuracy,recordedAt:new Date().toISOString()};
+  const ll=[latitude,longitude];
+  if(!gpsMarker){
+    const icon=L.divIcon({html:'<div style="width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 0 0 5px #3b82f644"></div>',iconSize:[16,16],iconAnchor:[8,8],className:""});
+    gpsMarker=L.marker(ll,{icon,zIndexOffset:1000}).addTo(map).bindPopup("Tu posición GPS");
+    gpsAccuracyCircle=L.circle(ll,{radius:accuracy,color:"#3b82f6",weight:1,fillOpacity:.08}).addTo(map);
+    map.setView(ll,Math.max(map.getZoom(),16));
+  }else{gpsMarker.setLatLng(ll);gpsAccuracyCircle.setLatLng(ll).setRadius(accuracy);}
+  const chip=document.getElementById("gpsChip");chip.classList.add("live");chip.textContent=`GPS · ±${Math.round(accuracy)} m`;
+  updateDiagnosisContext();
+}
+
+function gpsError(error){
+  if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
+  const messages={1:"Permiso de ubicación denegado.",2:"No se pudo obtener la ubicación.",3:"La ubicación tardó demasiado."};
+  document.getElementById("gpsChip").textContent="GPS · activar";
+  showFieldToast(messages[error.code]||"Error al activar GPS.");
+}
+
+async function doSearch(){
+  const q=document.getElementById("searchInput").value.trim();
+  if(!q)return;
+  setPill("pill-geo","wait");
+  document.getElementById("btnSearch").textContent="...";
+  try{
+    // Nominatim (OpenStreetMap) — cubre localidades pequeñas de México
+    const r=await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=3&accept-language=es`,
+      {headers:{"Accept-Language":"es"}}
+    );
+    const results=await r.json();
+    if(!results?.length){
+      // Fallback: Open-Meteo para ciudades grandes
+      const r2=await fetch(`${APIS.geocoding}?name=${encodeURIComponent(q)}&count=3&language=es&format=json`);
+      const d2=await r2.json();
+      if(!d2.results?.length){alert("No encontré esa ubicación. Intenta ser más específico o haz clic en el mapa.");return;}
+      const loc=d2.results[0];
+      map.setView([loc.latitude,loc.longitude],12);
+      placePin(loc.latitude,loc.longitude,`${loc.name}, ${loc.admin1||""}`);
+      selNombre=`${loc.name}, ${loc.admin1||""}`;
+    } else {
+      const loc=results[0];
+      const lat=parseFloat(loc.lat), lng=parseFloat(loc.lon);
+      const nombre=loc.display_name.split(",").slice(0,3).join(", ");
+      map.setView([lat,lng],13);
+      placePin(lat,lng,nombre);
+      selNombre=nombre;
+    }
+    document.getElementById("infoZona").textContent=selNombre;
+    setPill("pill-geo","ok");
+  }catch(e){setPill("pill-geo","err");alert("Error de geocodificación.");}
+  finally{document.getElementById("btnSearch").textContent="Buscar";}
+}
+
+// ── BÚSQUEDA POR VOZ ──
+const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
+let voiceRecognition=null;
+let voiceListening=false;
+
+function setVoiceState(listening,message=""){
+  voiceListening=listening;
+  const button=document.getElementById("btnVoice");
+  const status=document.getElementById("voiceStatus");
+  button.classList.toggle("listening",listening);
+  button.setAttribute("aria-pressed",String(listening));
+  button.textContent=listening?"■":"🎙";
+  button.title=listening?"Detener escucha":"Decir ubicación con el micrófono";
+  status.textContent=message;
+  status.classList.toggle("on",Boolean(message));
+}
+
+function voiceErrorMessage(error){
+  if(error==="not-allowed"||error==="service-not-allowed") return "El navegador no tiene permiso para usar el micrófono.";
+  if(error==="no-speech") return "No escuché una ubicación. Acércate al micrófono e intenta nuevamente.";
+  if(error==="audio-capture") return "No se encontró un micrófono disponible.";
+  if(error==="network") return "El reconocimiento de voz necesita conexión a internet.";
+  return "No pude reconocer la ubicación. Intenta nuevamente.";
+}
+
+function toggleVoiceSearch(){
+  if(!SpeechRecognitionAPI){
+    setVoiceState(false,"La búsqueda por voz no está disponible en este navegador. Usa Chrome actualizado.");
+    return;
+  }
+  if(voiceListening){
+    voiceRecognition?.stop();
+    return;
+  }
+
+  voiceRecognition=new SpeechRecognitionAPI();
+  voiceRecognition.lang="es-MX";
+  voiceRecognition.continuous=false;
+  voiceRecognition.interimResults=true;
+  voiceRecognition.maxAlternatives=1;
+
+  voiceRecognition.onstart=()=>setVoiceState(true,"Escuchando... Di el municipio, estado o ciudad.");
+  voiceRecognition.onresult=(event)=>{
+    let transcript="";
+    let finalResult=false;
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      transcript+=event.results[i][0].transcript;
+      if(event.results[i].isFinal) finalResult=true;
+    }
+    const location=transcript.trim();
+    if(location) document.getElementById("searchInput").value=location;
+    setVoiceState(true,finalResult?`Ubicación reconocida: ${location}`:`Escuchando: ${location}`);
+    if(finalResult){
+      voiceRecognition.stop();
+      setTimeout(()=>doSearch(),150);
+    }
+  };
+  voiceRecognition.onerror=(event)=>setVoiceState(false,voiceErrorMessage(event.error));
+  voiceRecognition.onend=()=>{
+    if(voiceListening) setVoiceState(false,document.getElementById("searchInput").value?"Ubicación capturada por voz.":"");
+  };
+
+  try{voiceRecognition.start();}
+  catch{setVoiceState(false,"No pude iniciar el micrófono. Espera un momento e intenta nuevamente.");}
+}
+
+if(!SpeechRecognitionAPI){
+  const voiceButton=document.getElementById("btnVoice");
+  voiceButton.title="Reconocimiento de voz no disponible en este navegador";
+}
+
+// ── MÓDULO DE CAMPO: PESTAÑAS, DIAGNÓSTICO E HISTORIAL ──
+function showFieldTab(tab){
+  document.querySelectorAll(".field-tab").forEach(item=>item.classList.remove("on"));
+  document.querySelectorAll(".field-view").forEach(item=>item.classList.remove("on"));
+  document.getElementById(`fieldTab-${tab}`).classList.add("on");
+  document.getElementById(`fieldView-${tab}`).classList.add("on");
+  if(tab==="map")setTimeout(()=>map?.invalidateSize(),80);
+  if(tab==="diagnostico")updateDiagnosisContext();
+  if(tab==="historial")renderFieldHistory();
+}
+
+function selectChoice(event,containerId){
+  event.preventDefault();
+  document.querySelectorAll(`#${containerId} [data-value]`).forEach(item=>item.classList.remove("on"));
+  event.currentTarget.classList.add("on");
+}
+
+function selectedChoice(containerId){
+  return document.querySelector(`#${containerId} .on`)?.dataset.value||null;
+}
+
+function showFieldToast(message){
+  const toast=document.getElementById("fieldToast");
+  toast.textContent=message;toast.classList.add("on");
+  clearTimeout(showFieldToast.timer);
+  showFieldToast.timer=setTimeout(()=>toast.classList.remove("on"),2800);
+}
+
+function escapeField(value){
+  return String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
+}
+
+function loadFieldRecords(){
+  try{
+    const records=JSON.parse(localStorage.getItem(FIELD_RECORDS_KEY)||"[]");
+    return Array.isArray(records)?records:[];
+  }catch{return [];}
+}
+
+function persistFieldRecords(records){
+  localStorage.setItem(FIELD_RECORDS_KEY,JSON.stringify(records));
+}
+
+function updateDiagnosisContext(){
+  const coords=currentGps||currentDevicePosition||((selLat!==null&&selLng!==null)?{lat:selLat,lng:selLng,accuracy:null}:null);
+  const liveMeasurement=polyPoints.length>=3?{...calculateMeasurement(polyPoints),points:polyPoints.map(({lat,lng})=>({lat,lng}))}:lastMeasurement;
+  document.getElementById("diagContext").textContent=`${coords?`Ubicación: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}${coords.accuracy?` · precisión ±${Math.round(coords.accuracy)} m`:""}`:"Sin ubicación · activa GPS o selecciona un punto en el mapa"}${liveMeasurement?` · Área: ${liveMeasurement.areaHa.toFixed(3)} ha`:" · Sin medición de área"}`;
+}
+
+async function handlePhoto(event){
+  const file=event.target.files?.[0];
+  if(!file)return;
+  if(!file.type.startsWith("image/")){showFieldToast("Selecciona un archivo de imagen.");return;}
+  try{
+    diagnosisPhoto=await compressPhoto(file);
+    const preview=document.getElementById("photoPreview");preview.src=diagnosisPhoto;preview.style.display="block";
+    showFieldToast("Fotografía lista para guardar.");
+  }catch{showFieldToast("No se pudo procesar la fotografía.");}
+}
+
+function compressPhoto(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=reject;
+    reader.onload=()=>{
+      const image=new Image();
+      image.onerror=reject;
+      image.onload=()=>{
+        const maxSide=1200,scale=Math.min(1,maxSide/Math.max(image.width,image.height));
+        const canvas=document.createElement("canvas");canvas.width=Math.round(image.width*scale);canvas.height=Math.round(image.height*scale);
+        canvas.getContext("2d").drawImage(image,0,0,canvas.width,canvas.height);
+        resolve(canvas.toDataURL("image/jpeg",.72));
+      };
+      image.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function saveDiagnosis(){
+  const name=document.getElementById("diagNombre").value.trim();
+  if(!name){showFieldToast("Escribe el nombre del lote.");document.getElementById("diagNombre").focus();return;}
+  const coords=currentGps||currentDevicePosition||((selLat!==null&&selLng!==null)?{lat:selLat,lng:selLng,accuracy:null,recordedAt:new Date().toISOString()}:null);
+  const liveMeasurement=polyPoints.length>=3?{...calculateMeasurement(polyPoints),points:polyPoints.map(({lat,lng})=>({lat,lng})),savedAt:new Date().toISOString()}:lastMeasurement;
+  const record={
+    schema:"agrosense.field-diagnosis.v1",
+    id:`field-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+    createdAt:new Date().toISOString(),
+    lot:{name,locality:document.getElementById("diagLocalidad").value.trim()||null,soilType:document.getElementById("diagSuelo").value||null,crop:document.getElementById("diagCultivo").value||null,slope:selectedChoice("slopeChoices")},
+    diagnosis:{vegetativeState:selectedChoice("healthChoices"),pests:document.getElementById("diagPlagas").value.trim()||null,waterAccess:document.getElementById("diagAgua").value||null,waterSource:document.getElementById("diagFuente").value||null,notes:document.getElementById("diagNotas").value.trim()||null,photo:diagnosisPhoto},
+    location:coords,
+    measurement:liveMeasurement||null,
+    device:deviceContext?{...deviceContext,readings:deviceReadings.slice(-10)}:null,
+    analysis:lastResult?{generatedAt:lastResult.ts,zone:lastResult.zona,topCrop:lastResult.scores?.[0]?.n||null}:null
+  };
+  const records=loadFieldRecords();records.unshift(record);
+  try{persistFieldRecords(records);}
+  catch(error){showFieldToast("No hay espacio local suficiente. Prueba con una foto más pequeña.");return;}
+  clearDiagnosisForm();
+  showFieldToast("Diagnóstico guardado en el equipo.");
+  showFieldTab("historial");
+}
+
+function clearDiagnosisForm(){
+  ["diagNombre","diagLocalidad","diagPlagas","diagNotas"].forEach(id=>document.getElementById(id).value="");
+  ["diagSuelo","diagCultivo","diagAgua","diagFuente"].forEach(id=>document.getElementById(id).value="");
+  document.querySelectorAll("#slopeChoices .on,#healthChoices .on").forEach(item=>item.classList.remove("on"));
+  diagnosisPhoto=null;const preview=document.getElementById("photoPreview");preview.removeAttribute("src");preview.style.display="none";document.getElementById("diagPhoto").value="";
+}
+
+function renderFieldHistory(){
+  const records=loadFieldRecords();
+  document.getElementById("historyCount").textContent=`${records.length} ${records.length===1?"registro":"registros"}`;
+  document.getElementById("historyList").innerHTML=records.length?records.map(record=>{
+    const area=record.measurement?.areaHa;
+    return `<article class="history-card" onclick="showRecordDetail('${escapeField(record.id)}')">
+      <div class="history-top"><div class="history-name">${escapeField(record.lot?.name||"Lote sin nombre")}</div><div class="history-date">${new Date(record.createdAt).toLocaleString("es-MX")}</div></div>
+      <div class="history-meta"><span>🌱 ${escapeField(record.lot?.crop||"Sin cultivo")}</span><span>📍 ${escapeField(record.lot?.locality||"Sin localidad")}</span>${area!==undefined?`<span>📐 ${Number(area).toFixed(3)} ha</span>`:""}</div>
+      <div class="history-actions"><button class="btn btn-sm" onclick="event.stopPropagation();showRecordDetail('${escapeField(record.id)}')">Ver detalle</button><button class="btn btn-sm danger-btn" onclick="event.stopPropagation();deleteFieldRecord('${escapeField(record.id)}')">Eliminar</button></div>
+    </article>`;
+  }).join(""):`<div class="empty-field"><div style="font-size:34px;margin-bottom:10px">📋</div>Aún no hay diagnósticos guardados.<br>Completa la pestaña Diagnóstico para crear el primero.</div>`;
+}
+
+function showRecordDetail(id){
+  const record=loadFieldRecords().find(item=>item.id===id);if(!record)return;
+  const {lot={},diagnosis={},location,measurement}=record;
+  document.getElementById("detailCard").innerHTML=`
+    <div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:17px;font-weight:800">${escapeField(lot.name)}</div><div style="font-size:10px;color:var(--muted)">${new Date(record.createdAt).toLocaleString("es-MX")}</div></div><button class="btn btn-sm" onclick="closeRecordDetail()">✕</button></div>
+    ${diagnosis.photo?`<img class="detail-photo" src="${diagnosis.photo}" alt="Fotografía del lote"/>`:""}
+    <div class="section-head">Lote</div><div style="font-size:12px;line-height:1.8;color:var(--muted)">Localidad: <strong>${escapeField(lot.locality||"N/D")}</strong><br>Suelo: <strong>${escapeField(lot.soilType||"N/D")}</strong><br>Cultivo: <strong>${escapeField(lot.crop||"N/D")}</strong><br>Pendiente: <strong>${escapeField(lot.slope||"N/D")}</strong></div>
+    <div class="section-head">Diagnóstico</div><div style="font-size:12px;line-height:1.8;color:var(--muted)">Estado vegetativo: <strong>${escapeField(diagnosis.vegetativeState||"N/D")}/5</strong><br>Plagas: <strong>${escapeField(diagnosis.pests||"Ninguna registrada")}</strong><br>Agua: <strong>${escapeField(diagnosis.waterAccess||"N/D")} · ${escapeField(diagnosis.waterSource||"fuente N/D")}</strong><br>Notas: <strong>${escapeField(diagnosis.notes||"Sin notas")}</strong></div>
+    <div class="section-head">Ubicación y medición</div><div style="font-size:12px;line-height:1.8;color:var(--muted)">${location?`${Number(location.lat).toFixed(5)}, ${Number(location.lng).toFixed(5)}${location.accuracy?` · ±${Math.round(location.accuracy)} m`:""}`:"Sin coordenadas"}<br>${measurement?`${Number(measurement.areaHa).toFixed(3)} ha · ${Math.round(measurement.areaM2).toLocaleString("es-MX")} m² · perímetro ${Math.round(measurement.perimeterM).toLocaleString("es-MX")} m`:"Sin medición"}</div>
+    ${record.device?`<div class="section-head">Dispositivo</div><div style="font-size:12px;line-height:1.8;color:var(--muted)">Tipo: <strong>${escapeField(record.device.type||"N/D")}</strong><br>Equipo/fuente: <strong>${escapeField(record.device.name||"N/D")}</strong><br>Lecturas adjuntas: <strong>${record.device.readings?.length||0}</strong></div>`:""}`;
+  document.getElementById("detailModal").classList.add("on");
+}
+
+function closeRecordDetail(){document.getElementById("detailModal").classList.remove("on");}
+
+function deleteFieldRecord(id){
+  if(!confirm("¿Eliminar este diagnóstico del historial local?"))return;
+  const records=loadFieldRecords().filter(item=>item.id!==id);persistFieldRecords(records);renderFieldHistory();showFieldToast("Registro eliminado.");
+}
+
+function exportFieldRecords(){
+  const payload={schema:"agrosense.field-export.v1",exportedAt:new Date().toISOString(),records:loadFieldRecords()};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`agrosense-campo-${new Date().toISOString().slice(0,10)}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+}
+
+// ── CENTRO DE DISPOSITIVOS ──
+function setDeviceStatus(id,text,state=""){
+  const element=document.getElementById(id);element.textContent=text;element.className=`device-status${state?` ${state}`:""}`;
+}
+
+function appendDeviceLog(id,message){
+  const element=document.getElementById(id);
+  const time=new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  element.textContent=`[${time}] ${message}\n${element.textContent}`.slice(0,2600);
+}
+
+function parseNmeaCoordinate(raw,hemisphere){
+  const value=Number(raw);if(!Number.isFinite(value))return null;
+  const degrees=Math.floor(value/100),minutes=value-degrees*100;
+  let decimal=degrees+minutes/60;
+  if(hemisphere==="S"||hemisphere==="W")decimal*=-1;
+  return decimal;
+}
+
+function nmeaChecksumValid(sentence){
+  if(!sentence.startsWith("$")||!sentence.includes("*"))return true;
+  const [body,expected]=sentence.slice(1).split("*");let checksum=0;
+  for(const char of body)checksum^=char.charCodeAt(0);
+  return checksum.toString(16).toUpperCase().padStart(2,"0")===expected.slice(0,2).toUpperCase();
+}
+
+function parseNmeaSentence(sentence){
+  const line=sentence.trim();if(!nmeaChecksumValid(line))return null;
+  const fields=line.split("*")[0].split(","),type=fields[0].slice(-3);
+  if(type==="GGA"){
+    const lat=parseNmeaCoordinate(fields[2],fields[3]),lng=parseNmeaCoordinate(fields[4],fields[5]);
+    if(lat===null||lng===null||Number(fields[6])===0)return null;
+    return {lat,lng,accuracy:Number(fields[8])||null,altitude:Number(fields[9])||null,satellites:Number(fields[7])||null,source:"GNSS NMEA"};
+  }
+  if(type==="RMC"&&fields[2]==="A"){
+    const lat=parseNmeaCoordinate(fields[3],fields[4]),lng=parseNmeaCoordinate(fields[5],fields[6]);
+    if(lat===null||lng===null)return null;
+    return {lat,lng,speedKmh:Number(fields[7]||0)*1.852,heading:Number(fields[8])||null,source:"GNSS NMEA"};
+  }
+  return null;
+}
+
+async function connectSerialDevice(){
+  if(!("serial" in navigator)){setDeviceStatus("serialStatus","No compatible","error");showFieldToast("Web Serial requiere Chrome de escritorio.");return;}
+  if(serialPort){showFieldToast("Ya existe un receptor serial conectado.");return;}
+  try{
+    serialPort=await navigator.serial.requestPort();
+    await serialPort.open({baudRate:Number(document.getElementById("serialBaud").value)||9600});
+    serialReading=true;setDeviceStatus("serialStatus","Conectado","live");
+    deviceContext={type:"gnss_serial",name:document.getElementById("serialLabel").value.trim()||"Receptor GNSS",connectedAt:new Date().toISOString()};
+    appendDeviceLog("serialLog","Puerto abierto. Esperando NMEA...");
+    readSerialLoop();
+  }catch(error){serialPort=null;setDeviceStatus("serialStatus","Error","error");appendDeviceLog("serialLog",error.name==="NotFoundError"?"Selección cancelada.":"No se pudo abrir el puerto.");}
+}
+
+async function readSerialLoop(){
+  const activePort=serialPort;
+  const decoder=new TextDecoder();
+  try{
+    while(serialPort?.readable&&serialReading){
+      serialReader=serialPort.readable.getReader();
+      try{
+        while(serialReading){
+          const {value,done}=await serialReader.read();if(done)break;
+          serialBuffer+=decoder.decode(value,{stream:true});
+          const lines=serialBuffer.split(/\r?\n/);serialBuffer=lines.pop()||"";
+          lines.forEach(processSerialLine);
+        }
+      }finally{serialReader.releaseLock();serialReader=null;}
+    }
+  }catch(error){if(serialReading)appendDeviceLog("serialLog",`Lectura interrumpida: ${error.message}`);}
+  finally{
+    if(serialReading)disconnectSerialDevice();
+    else{try{await activePort?.close();}catch{}}
+  }
+}
+
+function processSerialLine(line){
+  if(!line.startsWith("$"))return;
+  const position=parseNmeaSentence(line);
+  if(position){
+    ingestDevicePosition({...position,recordedAt:new Date().toISOString()});
+    appendDeviceLog("serialLog",`${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}${position.satellites?` · ${position.satellites} sat.`:""}`);
+  }
+}
+
+async function disconnectSerialDevice(){
+  serialReading=false;
+  try{await serialReader?.cancel();}catch{}
+  serialPort=null;serialReader=null;setDeviceStatus("serialStatus","Desconectado");appendDeviceLog("serialLog","Puerto cerrado.");
+}
+
+function ingestDevicePosition(position){
+  currentDevicePosition=position;deviceTrack.push([position.lat,position.lng]);
+  if(deviceTrack.length>5000)deviceTrack.shift();
+  if(!deviceTrackLayer)deviceTrackLayer=L.polyline(deviceTrack,{color:"#14b8a6",weight:3}).addTo(map);else deviceTrackLayer.setLatLngs(deviceTrack);
+  const icon=L.divIcon({html:'<div style="width:15px;height:15px;border-radius:3px;background:#14b8a6;border:2px solid white;box-shadow:0 0 0 4px #14b8a633"></div>',iconSize:[15,15],iconAnchor:[7,7],className:""});
+  if(!deviceMarker)deviceMarker=L.marker([position.lat,position.lng],{icon,zIndexOffset:900}).addTo(map).bindPopup("Posición de dispositivo");else deviceMarker.setLatLng([position.lat,position.lng]);
+  selLat=position.lat;selLng=position.lng;selNombre=deviceContext?.name||position.source||"Dispositivo externo";
+  document.getElementById("btnAnalyze").disabled=false;updateZonaInfo(position.lat,position.lng);updateDiagnosisContext();
+}
+
+async function connectBleDevice(){
+  if(!navigator.bluetooth){setDeviceStatus("bleStatus","No compatible","error");showFieldToast("Web Bluetooth no está disponible en este navegador.");return;}
+  const service=document.getElementById("bleServiceUuid").value.trim(),characteristic=document.getElementById("bleCharacteristicUuid").value.trim();
+  if(!service||!characteristic){showFieldToast("Ingresa los UUID proporcionados por el fabricante.");return;}
+  try{
+    bleDevice=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[service]});
+    bleDevice.addEventListener("gattserverdisconnected",handleBleDisconnect);
+    const server=await bleDevice.gatt.connect();const primary=await server.getPrimaryService(service);
+    bleCharacteristic=await primary.getCharacteristic(characteristic);
+    bleCharacteristic.addEventListener("characteristicvaluechanged",handleBleValue);
+    await bleCharacteristic.startNotifications();
+    deviceContext={type:"bluetooth_ble",name:bleDevice.name||"Sensor BLE",service,characteristic,connectedAt:new Date().toISOString()};
+    setDeviceStatus("bleStatus",bleDevice.name||"Conectado","live");appendDeviceLog("bleLog","Notificaciones activas.");
+  }catch(error){setDeviceStatus("bleStatus","Error","error");appendDeviceLog("bleLog",error.name==="NotFoundError"?"Selección cancelada.":`Conexión fallida: ${error.message}`);}
+}
+
+function handleBleValue(event){
+  const value=event.target.value;
+  const bytes=new Uint8Array(value.buffer,value.byteOffset,value.byteLength);
+  const text=new TextDecoder().decode(bytes).replace(/\0/g,"").trim();
+  let reading={raw:text||Array.from(bytes).join(","),recordedAt:new Date().toISOString()};
+  try{reading={...reading,...JSON.parse(text)};}catch{
+    const values=text.split(/[,;\s]+/).map(Number);
+    if(values.length>=2&&Number.isFinite(values[0])&&Number.isFinite(values[1]))reading.values=values;
+  }
+  deviceReadings.push(reading);if(deviceReadings.length>100)deviceReadings.shift();
+  const lat=Number(reading.lat??reading.latitude),lng=Number(reading.lng??reading.lon??reading.longitude);
+  if(Number.isFinite(lat)&&Number.isFinite(lng))ingestDevicePosition({lat,lng,accuracy:Number(reading.accuracy)||null,source:"Sensor BLE",recordedAt:reading.recordedAt});
+  appendDeviceLog("bleLog",reading.raw||JSON.stringify(reading));
+}
+
+function handleBleDisconnect(){setDeviceStatus("bleStatus","Desconectado");appendDeviceLog("bleLog","El sensor se desconectó.");bleCharacteristic=null;bleDevice=null;}
+function disconnectBleDevice(){try{bleDevice?.gatt?.disconnect();}catch{}handleBleDisconnect();}
+
+async function importTelemetryFile(event){
+  const file=event.target.files?.[0];if(!file)return;
+  try{
+    const text=await file.text(),geojson=parseTelemetryFile(file.name,text);
+    if(!geojson.features.length)throw new Error("El archivo no contiene geometrías válidas.");
+    clearDeviceLayer();
+    deviceLayer=L.geoJSON(geojson,{style:{color:"#14b8a6",weight:3,fillColor:"#14b8a6",fillOpacity:.12},pointToLayer:(_feature,ll)=>L.circleMarker(ll,{radius:5,color:"#14b8a6",fillOpacity:.8})}).addTo(map);
+    const bounds=deviceLayer.getBounds();if(bounds.isValid())map.fitBounds(bounds.pad(.12));
+    deviceContext={type:"telemetry_file",name:file.name,features:geojson.features.length,importedAt:new Date().toISOString()};
+    applyImportedMeasurement(geojson);
+    setDeviceStatus("fileStatus",`${geojson.features.length} capa(s)`,"live");appendDeviceLog("fileLog",`${file.name} · ${geojson.features.length} geometría(s) cargadas.`);updateDiagnosisContext();
+  }catch(error){setDeviceStatus("fileStatus","Error","error");appendDeviceLog("fileLog",error.message);}
+}
+
+function parseTelemetryFile(filename,text){
+  const lower=filename.toLowerCase();
+  if(lower.endsWith(".json")||lower.endsWith(".geojson")){
+    const parsed=JSON.parse(text);if(parsed.type==="FeatureCollection")return parsed;if(parsed.type==="Feature")return {type:"FeatureCollection",features:[parsed]};throw new Error("GeoJSON no reconocido.");
+  }
+  if(lower.endsWith(".gpx")){
+    const xml=new DOMParser().parseFromString(text,"application/xml");
+    const points=[...xml.querySelectorAll("trkpt,rtept,wpt")].map(node=>[Number(node.getAttribute("lon")),Number(node.getAttribute("lat"))]).filter(([lng,lat])=>Number.isFinite(lat)&&Number.isFinite(lng));
+    return pointsToGeoJson(points,filename);
+  }
+  if(lower.endsWith(".kml")){
+    const xml=new DOMParser().parseFromString(text,"application/xml");
+    const features=[...xml.querySelectorAll("coordinates")].map((node,index)=>{
+      const coords=node.textContent.trim().split(/\s+/).map(item=>item.split(",").slice(0,2).map(Number)).filter(([lng,lat])=>Number.isFinite(lat)&&Number.isFinite(lng));
+      const isPolygon=node.parentElement?.tagName?.toLowerCase()==="linearring";
+      return {type:"Feature",properties:{name:`${filename} ${index+1}`},geometry:{type:isPolygon?"Polygon":"LineString",coordinates:isPolygon?[coords]:coords}};
+    }).filter(feature=>feature.geometry.coordinates.length);
+    return {type:"FeatureCollection",features};
+  }
+  if(lower.endsWith(".csv")){
+    const rows=text.trim().split(/\r?\n/).map(row=>row.split(/[,;\t]/).map(cell=>cell.trim()));if(rows.length<2)throw new Error("CSV vacío.");
+    const headers=rows[0].map(value=>value.toLowerCase()),latIndex=headers.findIndex(value=>["lat","latitude","latitud"].includes(value)),lngIndex=headers.findIndex(value=>["lng","lon","longitude","longitud"].includes(value));
+    if(latIndex<0||lngIndex<0)throw new Error("El CSV necesita columnas lat/latitude y lon/lng/longitude.");
+    const points=rows.slice(1).map(row=>[Number(row[lngIndex]),Number(row[latIndex])]).filter(([lng,lat])=>Number.isFinite(lat)&&Number.isFinite(lng));return pointsToGeoJson(points,filename);
+  }
+  throw new Error("Formato no compatible.");
+}
+
+function pointsToGeoJson(points,name){
+  if(!points.length)return {type:"FeatureCollection",features:[]};
+  return {type:"FeatureCollection",features:[{type:"Feature",properties:{name},geometry:{type:points.length===1?"Point":"LineString",coordinates:points.length===1?points[0]:points}}]};
+}
+
+function applyImportedMeasurement(geojson){
+  const polygonFeature=geojson.features.find(feature=>feature.geometry?.type==="Polygon");
+  if(!polygonFeature)return;
+  const points=polygonFeature.geometry.coordinates[0].map(([lng,lat])=>({lat:Number(lat),lng:Number(lng)})).filter(point=>Number.isFinite(point.lat)&&Number.isFinite(point.lng));
+  if(points.length>1&&points[0].lat===points.at(-1).lat&&points[0].lng===points.at(-1).lng)points.pop();
+  if(points.length<3)return;
+  const metrics=calculateMeasurement(points);lastMeasurement={...metrics,points,savedAt:new Date().toISOString(),source:"telemetry_file"};localStorage.setItem(FIELD_MEASUREMENT_KEY,JSON.stringify(lastMeasurement));
+}
+
+function clearDeviceLayer(){
+  if(deviceLayer){map.removeLayer(deviceLayer);deviceLayer=null;}
+  setDeviceStatus("fileStatus","Sin archivo");
+}
+
+function exportSurveyRoute(){
+  const points=polyPoints.length>=3?polyPoints.map(({lat,lng})=>({lat,lng})):(lastMeasurement?.points||[]);
+  if(points.length<3){showFieldToast("Primero mide un perímetro de al menos 3 puntos.");return;}
+  const coordinates=points.map(point=>[point.lng,point.lat]),closed=[...coordinates,coordinates[0]];
+  const missionType=document.getElementById("missionType").value,altitude=Number(document.getElementById("missionAltitude").value)||null;
+  const payload={type:"FeatureCollection",name:"AgroSense survey reference",features:[
+    {type:"Feature",properties:{role:"survey_area",area_ha:calculateMeasurement(points).areaHa},geometry:{type:"Polygon",coordinates:[closed]}},
+    {type:"Feature",properties:{role:"reference_route",mission_type:missionType,altitude_m:missionType==="terrestrial_scout"?null:altitude,safety:"Ruta de referencia; validar en software del fabricante y normativa local."},geometry:{type:"LineString",coordinates:closed}}
+  ]};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/geo+json"}),link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`agrosense-ruta-${missionType}-${new Date().toISOString().slice(0,10)}.geojson`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+}
+
+function initDeviceCenter(){
+  document.getElementById("serialCapability").textContent="serial" in navigator?"Serial ✓":"Serial —";
+  document.getElementById("bleCapability").textContent=navigator.bluetooth?"Bluetooth ✓":"Bluetooth —";
+  navigator.serial?.addEventListener?.("disconnect",event=>{if(event.target===serialPort)disconnectSerialDevice();});
+}
+
+// ── ANÁLISIS PRINCIPAL ──
+function setPill(id,state){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.className="api-pill api-"+state;
+}
+
+function progressPercent(){
+  const done=progressSteps.filter(step=>step.status==="done").length;
+  const active=progressSteps.some(step=>step.status==="active") ? .5 : 0;
+  return Math.min(100, Math.round(((done+active)/progressSteps.length)*100));
+}
+
+function renderProgressWidget(){
+  const mount=document.getElementById("reactProgressWidget");
+  if(!mount)return;
+  const pct=progressPercent();
+  const active=progressSteps.find(step=>step.status==="active");
+  if(!window.React||!window.ReactDOM){
+    mount.innerHTML=`<div class="progress-widget"><div class="progress-top"><div class="progress-title">${active?active.label:"Preparando análisis"}</div><div class="progress-percent">${pct}%</div></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-steps">${progressSteps.map(step=>`<div class="progress-step ${step.status}"><span class="progress-dot">${step.status==="done"?"✓":step.id}</span><span>${step.label}</span></div>`).join("")}</div></div>`;
+    return;
+  }
+  const h=React.createElement;
+  const widget=h("div",{className:"progress-widget"},
+    h("div",{className:"progress-top"},
+      h("div",null,
+        h("div",{className:"progress-title"},active?active.label:"Preparando análisis"),
+        h("div",{style:{fontSize:"10px",color:"var(--muted)",marginTop:"2px"}},"Búsqueda agroclimática en tiempo real")
+      ),
+      h("div",{className:"progress-percent"},`${pct}%`)
+    ),
+    h("div",{className:"progress-track"},h("div",{className:"progress-fill",style:{width:`${pct}%`}})),
+    h("div",{className:"progress-steps"},progressSteps.map(step=>
+      h("div",{key:step.id,className:`progress-step ${step.status}`},
+        h("span",{className:"progress-dot"},step.status==="done"?"✓":step.id),
+        h("span",null,step.label)
+      )
+    ))
+  );
+  progressRoot ||= ReactDOM.createRoot(mount);
+  progressRoot.render(widget);
+}
+
+function resetProgressWidget(){
+  progressSteps=PROGRESS_STEPS.map(step=>({...step,status:"pending"}));
+  renderProgressWidget();
+}
+
+function setStep(n,state){
+  const el=document.getElementById("ls"+n);
+  if(el)el.className="lstep "+(state==="active"?"active":state==="done"?"done":"");
+  progressSteps=progressSteps.map(step=>step.id===n?{...step,status:state==="active"?"active":state==="done"?"done":"pending"}:step);
+  renderProgressWidget();
+}
+
+function showIdle(){
+  document.getElementById("mainLayout").classList.remove("results-open");
+  document.getElementById("idleState").style.display="flex";
+  document.getElementById("loadingPanel").style.display="none";
+  document.getElementById("resultsPanel").style.display="none";
+  resetProgressWidget();
+  setTimeout(()=>map?.invalidateSize(), 80);
+}
+function showLoading(){
+  document.getElementById("mainLayout").classList.add("results-open");
+  document.getElementById("idleState").style.display="none";
+  document.getElementById("loadingPanel").style.display="block";
+  document.getElementById("resultsPanel").style.display="none";
+  resetProgressWidget();
+  setTimeout(()=>map?.invalidateSize(), 80);
+}
+function showResults(){
+  document.getElementById("mainLayout").classList.add("results-open");
+  document.getElementById("idleState").style.display="none";
+  document.getElementById("loadingPanel").style.display="none";
+  document.getElementById("resultsPanel").style.display="block";
+  setTimeout(()=>map?.invalidateSize(), 80);
+}
+
+async function runAnalysis(){
+  if(!selLat||!selLng)return;
+  document.getElementById("btnAnalyze").disabled=true;
+  showLoading();
+
+  // Animar pasos mientras el orquestador trabaja
+  setStep(1,"active");
+  const stepTimers=[
+    setTimeout(()=>setStep(2,"active"),500),
+    setTimeout(()=>setStep(3,"active"),1100),
+    setTimeout(()=>setStep(4,"active"),1800),
+    setTimeout(()=>setStep(5,"active"),2600),
+    setTimeout(()=>setStep(6,"active"),3400),
+  ];
+
+  try{
+    // Una sola llamada al orquestador — toda la lógica vive en el backend
+    const resp=await fetch("/api/v2/analysis/zone",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({lat:selLat,lng:selLng,zona:selNombre,area_ha:selArea||0})
+    });
+    stepTimers.forEach(clearTimeout);
+
+    const d=await resp.json();
+    if(!d.ok) throw new Error(d.error||"No se pudo analizar la zona");
+
+    const A=d.data.analysis;   // contrato v1 — fuente única de verdad
+    const legacy=d.data;       // datos legacy (rain.meses para barras)
+
+    // Pills desde api_status del contrato
+    setPill("pill-geo",  "ok");
+    setPill("pill-fore", A.api_status.forecast?.status    ==="ok"?"ok":"warn");
+    setPill("pill-arch", A.api_status.archive?.status     ==="ok"?"ok":"warn");
+    setPill("pill-soil", A.api_status.soilgrids?.status   ==="ok"?"ok":"warn");
+    setPill("pill-ai",   A.api_status.market_agent?.status==="ok"?"ok":"warn");
+    for(let i=1;i<=6;i++) setStep(i,"done");
+
+    // Forecast — re-mapear campos del contrato al formato de render
+    const forecast={
+      days:(A.climate.forecast_days||[]).map(fd=>({
+        date:fd.date,tmax:fd.tmax_c,tmin:fd.tmin_c,
+        precip:fd.rain_mm,precipProb:null,helada:fd.frost_risk
+      })),
+      resumen:{
+        tProm7d:   A.climate.temp_avg_7d_c,
+        tMin7d:    A.climate.temp_min_7d_c,
+        tMax7d:    A.climate.temp_max_7d_c??null,
+        precip16d: A.climate.rain_16d_mm,
+        heladasN:  A.climate.frost_days_16d,
+        alertaHelada: A.climate.frost_days_16d>0,
+        timezone:"auto"
+      }
+    };
+
+    // Lluvia mensual — solo disponible en legacy (no está en el contrato v1)
+    const rain={
+      totalLluvia:   A.climate.rain_annual_mm,
+      tempAnualProm: legacy.rain?.tempAnualProm??"--",
+      heladas12m:    legacy.rain?.heladas12m??0,
+      meses:         legacy.rain?.meses??[]
+    };
+
+    // Suelo
+    const soil={
+      ph:        A.soil.ph,
+      disponible: A.soil.available,
+      textura:   A.soil.texture||(A.soil.available?"Datos parciales":"Sin datos")
+    };
+
+    // Cultivos desde contrato v1
+    const scores=(A.recommended_crops||[]).map(normalizeContractCrop);
+
+    // Mercado — legacy ya está en formato de render
+    const market=legacy.market;
+
+    // Actualizar altitud seleccionada
+    if(A.location.altitude_m) selAlt=A.location.altitude_m;
+
+    lastResult={
+      zona:    A.location.label,
+      lat:     A.location.lat,
+      lng:     A.location.lng,
+      altitud: A.location.altitude_m,
+      area_ha: A.location.area_ha,
+      forecast,rain,soil,scores,market,
+      ts: A.generated_at
+    };
+    renderResults(lastResult);
+
+  }catch(e){
+    stepTimers.forEach(clearTimeout);
+    console.error(e);
+    document.getElementById("resultsContent").innerHTML=`<div class="results"><div class="alert-box alert-warn">⚠ ${e.message||"Error al analizar la zona."} Verifica tu conexión e intenta de nuevo.</div></div>`;
+    showResults();
+  }finally{
+    document.getElementById("btnAnalyze").disabled=false;
+  }
+}
+
+function renderResults(r){
+  const {zona,altitud,forecast:f,rain,soil,scores,market} = r;
+  const fr = f.resumen;
+
+  // Construir barra de lluvia
+  const maxLl=Math.max(...rain.meses.map(m=>m.lluvia),1);
+  const rainBars=rain.meses.slice(-12).map(m=>{
+    const h=Math.max(4,Math.round(m.lluvia/maxLl*54));
+    const mes=m.mes.slice(5);
+    return `<div class="rain-bar-col"><div class="rain-bar" style="height:${h}px;opacity:.8"></div><div class="rain-bar-label">${MESES_S[parseInt(mes)-1]}</div></div>`;
+  }).join("");
+
+  // Forecast strip
+  const fStrip=(f.days||[]).slice(0,7).map(d=>{
+    const fecha=new Date(d.date+"T12:00:00");
+    return `<div class="fday${d.helada?" helada":""}">
+      <div class="fday-label">${DIAS_S[fecha.getDay()]}</div>
+      <div class="fday-hi">${d.tmax?.toFixed(0)||"—"}°</div>
+      <div class="fday-lo">${d.tmin?.toFixed(0)||"—"}°</div>
+      <div class="fday-mm">${d.precip?.toFixed(0)||"0"}mm</div>
+    </div>`;
+  }).join("");
+
+  // Scores de cultivos
+  const cultivoCards=scores.map((c,i)=>{
+    const sc=c.score; const col=scoreColor(sc);
+    return `<div class="cultivo-card${i===0?" top1":""}" onclick="this.querySelector('.alert-mini') && this.querySelector('.alert-mini').parentNode.classList.toggle('expanded')">
+      <div class="cultivo-header">
+        <span class="cultivo-emoji">${c.e}</span>
+        <div>
+	          <div class="cultivo-name">${c.n} ${i<3?["🥇","🥈","🥉"][i]:""}</div>
+	          <div class="cultivo-prod"><span class="cbadge cb-low" style="margin-right:5px">${categoryLabel(c)}</span>${c.prod}</div>
+	          <div class="cultivo-badges">
+	            <span class="cbadge ${costBadge(c.tipoCosto)}">${c.tipoCosto==="bajo"?"Costo bajo":c.tipoCosto==="medio"?"Costo medio":"Costo alto"}</span>
+            <span class="cbadge ${cicloClass(c.tipoCiclo)}">${c.tipoCiclo==="corto"?"Ciclo corto":c.tipoCiclo==="medio"?"Ciclo medio":"Ciclo largo"} · ${c.ciclo}m</span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:18px;font-weight:800;color:${col}">${sc}</div><div style="font-size:9px;color:var(--muted)">${c.nivel}</div></div>
+      </div>
+      <div class="score-row"><span style="font-size:10px;color:var(--muted);min-width:60px">Viabilidad</span><div class="score-track"><div class="score-fill" style="width:${sc}%;background:${col}"></div></div><span class="score-num" style="color:${col}">${sc}/100</span></div>
+      <div class="meter-row" style="margin-top:5px"><span class="meter-label">ROI transformado</span><div class="meter-track"><div class="meter-fill" style="width:${Math.min(100,Math.round(c.pT/c.pF*3))}%;background:var(--lime)"></div></div><span style="font-size:10px;font-weight:700;color:var(--lime)">×${Math.round(c.pT/c.pF)}</span></div>
+      <div class="meter-row" style="margin-top:3px"><span class="meter-label">Fumigaciones</span><div class="meter-track"><div class="meter-fill" style="width:${c.fumi/9*100}%;background:var(--amber)"></div></div><span style="font-size:10px;color:var(--amber)">${c.fumi}/ciclo</span></div>
+      ${c.alertas.slice(0,1).map(a=>`<div class="alert-mini">⚠ ${a}</div>`).join("")}
+      ${c.recs.slice(0,1).map(a=>`<div class="rec-mini">✓ ${a}</div>`).join("")}
+    </div>`;
+  }).join("");
+
+  // Mercado / oportunidades
+  let marketHTML="";
+  if(market){
+    if(market.recomendacion){
+      marketHTML+=`<div class="alert-box alert-ok">🏆 ${market.recomendacion}</div>`;
+    }
+    if(market.alerta_mercado){
+      marketHTML+=`<div class="alert-box alert-info">📊 ${market.alerta_mercado}</div>`;
+    }
+    if(market.nichos_oportunidad?.length){
+      marketHTML+=market.nichos_oportunidad.map(n=>`
+        <div class="opportunity-card">
+          <div class="opp-name">${n.cultivo}</div>
+          <div class="opp-reason">${n.razon}</div>
+          <div class="opp-chips">
+            <span class="opp-chip">💰 ${n.precio_mx}</span>
+            <span class="opp-chip">Competencia: ${n.competencia}</span>
+            <span class="opp-chip">Mercado: ${n.mercado}</span>
+          </div>
+        </div>`).join("");
+    }
+    if(market.cultivos_analogos_globales?.length){
+      marketHTML+=`<div class="section-head">Cultivos análogos globales para esta zona</div>`;
+      marketHTML+=market.cultivos_analogos_globales.map(c=>`
+        <div class="alert-box alert-info">🌍 <strong>${c.cultivo}</strong> · ${c.region} · Viabilidad ${c.viabilidad} — ${c.justificacion}</div>`).join("");
+    }
+  }else{
+    marketHTML=`<div class="alert-box alert-warn">⚠ Análisis de mercado no disponible — verifica la API key de Claude</div>`;
+  }
+
+  document.getElementById("resultsContent").innerHTML=`
+    <div class="section-head">Perfil de zona — ${zona}</div>
+    <div class="metrics-grid">
+      <div class="metric"><div class="metric-label">Altitud</div><div class="metric-value" style="color:var(--blue)">${altitud?Math.round(altitud)+"m":"N/D"}</div><div class="metric-sub">msnm</div></div>
+      <div class="metric"><div class="metric-label">Temp promedio</div><div class="metric-value" style="color:var(--lime)">${fr.tProm7d}°C</div><div class="metric-sub">7 días</div></div>
+      <div class="metric"><div class="metric-label">Temp mínima</div><div class="metric-value" style="color:${fr.alertaHelada?"var(--red)":"var(--blue)"}">${fr.tMin7d}°C</div><div class="metric-sub">${fr.alertaHelada?"⚠ Helada posible":"Sin riesgo"}</div></div>
+      <div class="metric"><div class="metric-label">Lluvia anual</div><div class="metric-value" style="color:var(--blue)">${rain.totalLluvia}mm</div><div class="metric-sub">12 meses reales</div></div>
+      <div class="metric"><div class="metric-label">Lluvia 16 días</div><div class="metric-value" style="color:var(--teal)">${fr.precip16d}mm</div><div class="metric-sub">pronóstico</div></div>
+      <div class="metric"><div class="metric-label">Temp anual</div><div class="metric-value">${rain.tempAnualProm}°C</div><div class="metric-sub">promedio 12m</div></div>
+    </div>
+
+    <div class="section-head">Pronóstico 7 días${fr.fromArchive?" (basado en histórico)":""}</div>
+    <div class="forecast-strip">${fStrip}</div>
+
+    <div class="section-head">Lluvia mensual — últimos 12 meses (datos reales)</div>
+    <div class="rain-bars">${rainBars}</div>
+    ${fr.alertaHelada?`<div class="alert-box alert-warn" style="margin-top:6px">⚠ ${fr.heladasN} día(s) con helada previstos — revisar cultivos sensibles</div>`:""}
+
+    ${soil.disponible?`
+    <div class="section-head">Suelo (SoilGrids ISRIC)</div>
+    <div class="soil-grid">
+      ${soil.ph!==null?`<div class="soil-item"><div class="soil-label">pH</div><div class="soil-value" style="color:${soil.ph>=6&&soil.ph<=7.5?"var(--lime)":"var(--amber)"}">${soil.ph}</div><div class="soil-sub">${soil.ph>=6&&soil.ph<=7.5?"Rango óptimo":"Corregir"}</div></div>`:""}
+    </div>`:`<div class="alert-box alert-info" style="margin-top:8px">ℹ SoilGrids: sin cobertura para esta zona — recomendamos análisis de suelo local</div>`}
+
+	    <div class="section-head">Propuestas por tipo de producto — ${scores.length} especies analizadas</div>
+	    <div style="display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px">${categorySummary(scores)}</div>
+	    ${cultivoCards}
+
+    <div class="section-head">Análisis de mercado y oportunidades</div>
+    ${marketHTML}
+  `;
+
+  document.getElementById("generadoEn").textContent=`Generado: ${new Date(r.ts).toLocaleString("es-MX")} · APIs: Open-Meteo · SoilGrids · Claude`;
+  showResults();
+}
+
+// ── AUTH INLINE EN MODAL ─────────────────────────────────────────────────────
+
+let _saveAuthMode="login";
+
+function toggleSaveAuthMode(mode){
+  _saveAuthMode=mode;
+  document.getElementById("saveAuthRegName").style.display=mode==="register"?"block":"none";
+  document.getElementById("btnDoAuth").textContent=mode==="register"?"Crear cuenta y guardar":"Iniciar sesión";
+  document.getElementById("btnAuthTabLogin").style.background=mode==="login"?"var(--lime)":"var(--bg3)";
+  document.getElementById("btnAuthTabLogin").style.color=mode==="login"?"#06130a":"var(--fg)";
+  document.getElementById("btnAuthTabReg").style.background=mode==="register"?"var(--lime)":"var(--bg3)";
+  document.getElementById("btnAuthTabReg").style.color=mode==="register"?"#06130a":"var(--fg)";
+  document.getElementById("saveAuthError").style.display="none";
+}
+
+async function doSaveAuth(){
+  const email=document.getElementById("saveAuthEmail").value.trim();
+  const pass=document.getElementById("saveAuthPass").value;
+  const nombre=document.getElementById("saveRegNombre")?.value.trim()||"Usuario";
+  const errEl=document.getElementById("saveAuthError");
+  const btn=document.getElementById("btnDoAuth");
+  if(!email||!pass){errEl.textContent="Completa email y contraseña.";errEl.style.display="block";return;}
+  btn.disabled=true; btn.textContent="...";
+  try{
+    const path=_saveAuthMode==="register"?"/api/v2/auth/register":"/api/v2/auth/login";
+    const body=_saveAuthMode==="register"?{nombre,email,password:pass}:{email,password:pass};
+    const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!d.ok) throw new Error(d.error||"Error de autenticación");
+    localStorage.setItem("agrosense_token",d.data.accessToken);
+    localStorage.setItem("agrosense_user",JSON.stringify(d.data.user));
+    // Sesión lista — ocultar panel y habilitar guardar
+    document.getElementById("saveAuthPanel").style.display="none";
+    document.getElementById("btnSaveOk").disabled=false;
+    document.getElementById("saveAuthMsg").textContent="";
+    showFieldToast(`✓ Sesión iniciada como ${d.data.user.nombre}`);
+  }catch(e){
+    errEl.textContent=e.message;errEl.style.display="block";
+  }finally{
+    btn.disabled=false;
+    btn.textContent=_saveAuthMode==="register"?"Crear cuenta y guardar":"Iniciar sesión";
+  }
+}
+
+// ── GUARDAR PARCELA + CICLO ──────────────────────────────────────────────────
+
+function openSaveModal(){
+  if(!lastResult)return;
+  const r=lastResult;
+
+  // Pre-llenar nombre y coords
+  document.getElementById("saveNombre").value=r.zona||"Mi parcela";
+  document.getElementById("saveCoords").value=
+    `${r.lat?.toFixed(5)}, ${r.lng?.toFixed(5)}`+(r.altitud?` · ${Math.round(r.altitud)} msnm`:"");
+
+  // Llenar select de cultivos
+  const sel=document.getElementById("saveCultivoSel");
+  sel.innerHTML='<option value="">— Sin ciclo por ahora —</option>';
+  (r.scores||[]).slice(0,10).forEach(c=>{
+    const opt=document.createElement("option");
+    opt.value=c.id;
+    opt.dataset.ciclo=c.ciclo||6;
+    opt.textContent=`${c.e||"🌱"} ${c.n} (${c.score}/100)`;
+    sel.appendChild(opt);
+  });
+  // Pre-seleccionar el top cultivo
+  if(r.scores?.[0]) sel.value=r.scores[0].id;
+
+  // Toggle campos de ciclo
+  const toggleCiclo=()=>{
+    document.getElementById("saveCicloFields").style.display=sel.value?"block":"none";
+  };
+  sel.onchange=toggleCiclo;
+  toggleCiclo();
+
+  // Fecha siembra: hoy
+  document.getElementById("saveFechaSiembra").value=new Date().toISOString().slice(0,10);
+  document.getElementById("savePresupuesto").value="";
+
+  // Verificar sesión real (demo-token no es válido para guardar)
+  const token=localStorage.getItem("agrosense_token");
+  const hasRealSession=token && token!=="demo-token";
+  document.getElementById("saveAuthPanel").style.display=hasRealSession?"none":"block";
+  document.getElementById("saveAuthError").style.display="none";
+  document.getElementById("saveAuthEmail").value="";
+  document.getElementById("saveAuthPass").value="";
+  if(!hasRealSession) toggleSaveAuthMode("login");
+  const btnOk=document.getElementById("btnSaveOk");
+  btnOk.disabled=!hasRealSession;
+  btnOk.textContent="Guardar";
+
+  // Limpiar msg
+  const msg=document.getElementById("saveMsg");
+  msg.className="save-msg";
+  msg.textContent="";
+
+  document.getElementById("saveModal").classList.add("open");
+}
+
+function closeSaveModal(){
+  document.getElementById("saveModal").classList.remove("open");
+}
+
+async function doSaveParcela(){
+  const token=localStorage.getItem("agrosense_token");
+  if(!token||token==="demo-token")return;
+  const r=lastResult;
+  const nombre=document.getElementById("saveNombre").value.trim()||r.zona||"Parcela";
+  const cultivoId=document.getElementById("saveCultivoSel").value;
+  const fechaSiembra=document.getElementById("saveFechaSiembra").value;
+  const presupuesto=Number(document.getElementById("savePresupuesto").value)||0;
+
+  const btn=document.getElementById("btnSaveOk");
+  const msg=document.getElementById("saveMsg");
+  btn.disabled=true;
+  btn.textContent="Guardando…";
+  msg.className="save-msg";
+  msg.textContent="";
+
+  const headers={"Content-Type":"application/json","Authorization":`Bearer ${token}`};
+
+  try{
+    // 1. Crear parcela
+    const pR=await fetch("/api/v2/parcelas",{method:"POST",headers,
+      body:JSON.stringify({nombre,lat:r.lat,lng:r.lng,altitud_m:r.altitud??null,area_ha:r.area_ha??null})});
+    const pD=await pR.json();
+    if(!pD.ok) throw new Error(pD.error||"Error al crear parcela");
+    const parcela=pD.data;
+
+    // 2. Crear ciclo si el usuario seleccionó un cultivo
+    if(cultivoId&&fechaSiembra){
+      const cultivo=(r.scores||[]).find(c=>c.id===cultivoId);
+      const durMeses=Number(cultivo?.ciclo||6);
+      const fechaCosecha=(()=>{
+        const d=new Date(fechaSiembra+"T00:00:00");
+        d.setMonth(d.getMonth()+durMeses);
+        return d.toISOString().slice(0,10);
+      })();
+      const cR=await fetch("/api/v2/ciclos",{method:"POST",headers,
+        body:JSON.stringify({
+          parcela_id:parcela.id,
+          cultivo_id:cultivoId,
+          cultivo_nombre:cultivo?.n||cultivoId,
+          fecha_siembra:fechaSiembra,
+          fecha_cosecha_est:fechaCosecha,
+          area_ha:r.area_ha??null,
+          presupuesto_total:presupuesto,
+          objetivo:"fresco",
+          tipo_manejo:"convencional",
+          notas:`Ciclo iniciado desde análisis de zona — score ${cultivo?.score||0}/100`
+        })});
+      const cD=await cR.json();
+      if(!cD.ok) throw new Error(cD.error||"Parcela guardada pero error al crear ciclo");
+    }
+
+    msg.className="save-msg ok";
+    msg.innerHTML=`✓ <strong>"${nombre}"</strong> guardada${cultivoId?" con ciclo iniciado":""}. `+
+      `<a href="/dashboard" style="color:var(--lime);font-weight:700">Ver en Dashboard →</a>`;
+    btn.textContent="¡Listo!";
+
+  }catch(e){
+    msg.className="save-msg err";
+    msg.textContent="⚠ "+(e.message||"Error al guardar");
+    btn.disabled=false;
+    btn.textContent="Reintentar";
+  }
+}
+
+function exportJSON(){
+  if(!lastResult)return;
+  const blob=new Blob([JSON.stringify(lastResult,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`agrosense-${lastResult.zona?.replace(/[^a-z0-9]/gi,"_").toLowerCase()}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function exportPDF(){
+  if(!lastResult){showFieldToast("Primero realiza un análisis.");return;}
+  // Detectar jsPDF (distintas versiones exponen el global de forma diferente)
+  const jsPDFCtor=window.jspdf?.jsPDF||window.jsPDF;
+  if(!jsPDFCtor){showFieldToast("Librería PDF no cargada — recarga la página e intenta de nuevo.");return;}
+  try{
+    const doc=new jsPDFCtor({orientation:"portrait",unit:"mm",format:"a4"});
+    const r=lastResult;
+    const lime=[132,204,22],dark=[13,40,24],white=[248,250,252],muted=[148,163,184];
+    doc.setFillColor(...dark);doc.rect(0,0,210,297,"F");
+    doc.setFillColor(...lime);doc.rect(0,0,210,20,"F");
+    doc.setTextColor(...dark);doc.setFontSize(13);doc.setFont("helvetica","bold");
+    doc.text("AgroSense - Reporte Tecnico",14,13);
+    doc.setFontSize(8);doc.setFont("helvetica","normal");
+    doc.text("Motor Fase 1 - Datos en tiempo real",148,13);
+    doc.setTextColor(...muted);doc.setFontSize(9);
+    doc.text("Zona: "+(r.zona||"--"),14,28);
+    doc.text("Fecha: "+new Date(r.ts).toLocaleDateString("es-MX",{year:"numeric",month:"long",day:"numeric"}),14,34);
+    doc.text("Coords: "+(r.lat?.toFixed(4)||"--")+" N, "+Math.abs(r.lng||0).toFixed(4)+" O"+(r.altitud?" - "+Math.round(r.altitud)+" msnm":""),14,40);
+    if(r.area_ha) doc.text("Area: "+r.area_ha+" ha",14,46);
+    doc.setTextColor(...lime);doc.setFontSize(10);doc.setFont("helvetica","bold");
+    doc.text("Perfil climatico (datos reales)",14,54);doc.line(14,56,120,56);
+    doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(...white);
+    doc.text("Temp promedio 7d:  "+(r.forecast?.resumen?.tProm7d??"-")+" C",18,64);
+    doc.text("Temp minima 7d:    "+(r.forecast?.resumen?.tMin7d??"-")+" C",18,71);
+    doc.text("Lluvia anual:      "+(r.rain?.totalLluvia??"-")+" mm",18,78);
+    doc.text("Lluvia 16 dias:    "+(r.forecast?.resumen?.precip16d??"-")+" mm",18,85);
+    doc.text("Temp anual prom:   "+(r.rain?.tempAnualProm??"-")+" C",18,92);
+    doc.text("Heladas previstas: "+(r.forecast?.resumen?.heladasN??0)+" dias",18,99);
+    doc.setTextColor(...lime);doc.setFontSize(10);doc.setFont("helvetica","bold");
+    doc.text("Top 5 cultivos por viabilidad climatica",14,112);doc.line(14,114,170,114);
+    doc.setFont("helvetica","normal");doc.setFontSize(9);
+    (r.scores||[]).slice(0,5).forEach((c,i)=>{
+      const y=122+i*10;
+      const col=c.score>=75?lime:c.score>=50?[245,158,11]:muted;
+      doc.setTextColor(...col);
+      // Sin emoji — solo nombre
+      doc.text(`${i+1}. ${c.n||c.nombre||"--"}`,18,y);
+      doc.text(`${c.score}/100 - ${c.nivel||"--"}`,100,y);
+      doc.setTextColor(...white);
+      doc.text(`$${c.pT||c.precioTransformado||"--"}/kg transf.`,155,y);
+    });
+    if(r.soil?.disponible&&r.soil?.ph!=null){
+      doc.setTextColor(...lime);doc.setFont("helvetica","bold");
+      doc.text("Suelo (SoilGrids)",14,178);doc.line(14,180,80,180);
+      doc.setFont("helvetica","normal");doc.setTextColor(...white);
+      doc.text("pH estimado: "+r.soil.ph,18,188);
+    }
+    if(r.market?.recomendacion){
+      doc.setTextColor(...lime);doc.setFont("helvetica","bold");
+      doc.text("Recomendacion de mercado",14,200);doc.line(14,202,140,202);
+      doc.setTextColor(...white);doc.setFont("helvetica","normal");doc.setFontSize(8);
+      const lines=doc.splitTextToSize(r.market.recomendacion.replace(/[^\x00-\x7F]/g," "),182);
+      doc.text(lines,14,210);
+    }
+    doc.setFillColor(...lime);doc.rect(0,285,210,12,"F");
+    doc.setTextColor(...dark);doc.setFontSize(7);
+    doc.text("AgroSense - Datos: Open-Meteo, SoilGrids ISRIC, Claude AI - "+new Date().toLocaleDateString("es-MX"),14,292);
+    const fname=`AgroSense-${(r.zona||"zona").replace(/[^a-z0-9]/gi,"_").slice(0,30)}-${new Date().toISOString().slice(0,10)}.pdf`;
+    doc.save(fname);
+  }catch(err){
+    console.error("PDF error:",err);
+    showFieldToast("Error al generar PDF: "+err.message);
+  }
+}
+
+function initFieldModule(){
+  initMap();
+  initDeviceCenter();
+  try{lastMeasurement=JSON.parse(localStorage.getItem(FIELD_MEASUREMENT_KEY)||"null");}catch{lastMeasurement=null;}
+  updateDiagnosisContext();
+  renderFieldHistory();
+  window.addEventListener("online",()=>showFieldToast("Conexión recuperada."));
+  window.addEventListener("offline",()=>showFieldToast("Modo sin conexión: los registros locales siguen disponibles."));
+}
+
+document.addEventListener("DOMContentLoaded",initFieldModule);
+document.getElementById("searchInput").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch();});
+</script>
+</body>
+</html>

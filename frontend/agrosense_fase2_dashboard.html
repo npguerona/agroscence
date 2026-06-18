@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AgroSense — Dashboard Fase 2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a1f10;--bg2:#0f2a16;--bg3:#142e1a;--bg4:#1a3820;
+  --lime:#84cc16;--lime2:#a3e635;
+  --white:#f8fafc;--muted:#94a3b8;--faint:#3a5a42;
+  --card:#152a1a;--border:#1e4025;
+  --red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;--teal:#14b8a6;
+  --font:'Inter',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:100vh}
+
+/* ── AUTH SCREEN ── */
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;max-width:400px}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center}
+.auth-logo-dot{width:36px;height:36px;background:var(--lime);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.auth-logo-name{font-size:18px;font-weight:800}
+.auth-logo-sub{font-size:10px;color:var(--lime);text-transform:uppercase;letter-spacing:.07em}
+.auth-tabs{display:flex;margin-bottom:24px;border-bottom:1px solid var(--border)}
+.auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.auth-tab.on{color:var(--lime);border-bottom-color:var(--lime)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:10px 12px;font-size:13px;font-family:var(--font)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--lime)}
+.field input::placeholder{color:var(--faint)}
+.btn-auth{width:100%;background:var(--lime);color:var(--bg);border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;transition:background .2s}
+.btn-auth:hover{background:var(--lime2)}
+.btn-auth:disabled{opacity:.5;cursor:not-allowed}
+.auth-err{background:#7f1d1d22;border:1px solid #7f1d1d55;color:#fca5a5;border-radius:8px;padding:8px 12px;font-size:12px;margin-top:10px;display:none}
+
+/* ── APP SHELL ── */
+.app-shell{display:none;min-height:100vh;background:var(--bg)}
+.sidebar{width:252px;height:100vh;position:sticky;top:0;flex-shrink:0;background:#0c2413;border-right:1px solid var(--border);padding:18px 12px 12px;display:flex;flex-direction:column;z-index:40}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;padding:0 8px 20px}
+.logo-dot{width:34px;height:34px;background:var(--lime);color:var(--bg);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 6px 18px #84cc1622}
+.logo-sub{font-size:9px;color:var(--lime);text-transform:uppercase;letter-spacing:.09em;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:3px;overflow-y:auto;min-height:0}
+.nav-group{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#587460;padding:18px 10px 6px}
+.nav-group:first-child{padding-top:4px}
+.nav-btn{width:100%;padding:10px 11px;border-radius:9px;font-size:12px;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:10px;text-align:left;text-decoration:none}
+.nav-btn:hover{color:var(--white);background:var(--bg3)}
+.nav-btn.on{color:var(--white);background:#1b3a21;box-shadow:inset 3px 0 0 var(--lime)}
+.nav-icon{width:22px;text-align:center;font-size:15px;flex-shrink:0}
+.nav-label{flex:1}
+.sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border)}
+.user-card{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:9px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--bg4);color:var(--lime);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.user-chip{font-size:12px;color:var(--white);display:flex;min-width:0;flex-direction:column;gap:2px;flex:1}
+.user-chip span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main-shell{flex:1;min-width:0;display:flex;flex-direction:column;height:100vh}
+.topbar{height:70px;flex-shrink:0;background:rgba(10,31,16,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.page-heading{min-width:0}
+.page-eyebrow{font-size:9px;color:var(--lime);font-weight:800;text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px}
+.page-title{font-size:18px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.mobile-menu-btn{display:none;background:transparent;border:1px solid var(--border);color:var(--white);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:17px}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:#0009;z-index:35}
+.plan-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px}
+.pc-free{background:#14532d22;color:#4ade80;border:1px solid #16a34a44}
+.pc-pro{background:#78350f22;color:#fbbf24;border:1px solid #78350f44}
+.pc-enterprise{background:#4c1d9522;color:#a78bfa;border:1px solid #4c1d9544}
+.btn-sm{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:7px;font-size:11px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.btn-sm:hover{border-color:var(--lime);color:var(--lime)}
+.alert-dot{width:8px;height:8px;background:var(--red);border-radius:50%;flex-shrink:0}
+
+/* ── VIEWS ── */
+.views{flex:1;overflow:hidden}
+.view{display:none;height:100%;overflow-y:auto;padding:24px clamp(18px,3vw,42px) 40px}
+.view.on{display:block}
+.view::-webkit-scrollbar{width:4px}
+.view::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card.accent{border-color:var(--lime);background:#14532d11}
+.card.warn{border-color:#f59e0b55;background:#78350f11}
+.card.danger{border-color:#ef444455;background:#7f1d1d11}
+.card-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--lime);margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.section-title:first-child{margin-top:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* ── METRIC ── */
+.metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.metric-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+.metric-value{font-size:22px;font-weight:800}
+.metric-sub{font-size:10px;color:var(--faint);margin-top:2px}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid #ffffff06;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;border:1px solid;white-space:nowrap}
+.badge-ok{background:#14532d22;color:#4ade80;border-color:#16a34a44}
+.badge-warn{background:#78350f22;color:#fbbf24;border-color:#78350f44}
+.badge-danger{background:#7f1d1d22;color:#fca5a5;border-color:#7f1d1d44}
+.badge-info{background:#1e3a5f22;color:#93c5fd;border-color:#1d4ed844}
+.badge-neutral{background:var(--bg3);color:var(--muted);border-color:var(--border)}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-field{margin-bottom:10px}
+.form-field label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.form-field input,.form-field select,.form-field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:8px 10px;font-size:12px;font-family:var(--font)}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--lime)}
+.form-field textarea{resize:vertical;min-height:72px}
+.btn-primary{background:var(--lime);color:var(--bg);border:none;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s}
+.btn-primary:hover{background:var(--lime2)}
+.btn-ghost{background:transparent;color:var(--lime);border:1px solid var(--border);padding:9px 16px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font);transition:all .15s}
+.btn-ghost:hover{border-color:var(--lime)}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+
+/* ── FLUJO CAJA ── */
+.flujo-bar{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #ffffff06}
+.flujo-mes{font-size:11px;color:var(--muted);min-width:44px}
+.flujo-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative}
+.flujo-egr{height:100%;border-radius:4px;background:#ef444488;position:absolute;left:0;top:0}
+.flujo-ing{height:100%;border-radius:4px;background:#84cc1688;position:absolute;left:0;top:0}
+.flujo-nums{display:flex;gap:10px;min-width:160px;justify-content:flex-end;font-size:11px}
+.flujo-nums .e{color:#fca5a5}
+.flujo-nums .i{color:#4ade80}
+.flujo-saldo{font-size:11px;font-weight:700;min-width:70px;text-align:right}
+
+/* ── ALERTAS ── */
+.alerta-item{display:flex;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:6px;align-items:flex-start}
+.alerta-item.critical{background:#7f1d1d18;border:1px solid #7f1d1d44}
+.alerta-item.warning{background:#78350f18;border:1px solid #78350f44}
+.alerta-item.info{background:#1e3a5f18;border:1px solid #1d4ed844}
+.alerta-icon{font-size:16px;flex-shrink:0}
+.alerta-title{font-size:12px;font-weight:700;margin-bottom:2px}
+.alerta-msg{font-size:11px;color:var(--muted);line-height:1.5}
+.alerta-time{font-size:10px;color:var(--faint);margin-top:3px}
+
+/* ── BITÁCORA ── */
+.bit-item{display:flex;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:8px;margin-bottom:5px;align-items:flex-start}
+.bit-date{font-size:10px;color:var(--muted);min-width:52px;text-align:right;padding-top:1px}
+.bit-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.bit-labor{font-size:11px;font-weight:700;margin-bottom:1px}
+.bit-desc{font-size:11px;color:var(--muted)}
+.bit-cost{font-size:10px;color:var(--lime);margin-top:3px}
+
+/* ── CHART MINI ── */
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:48px}
+.mini-bar{flex:1;border-radius:3px 3px 0 0;min-width:6px;min-height:2px;transition:height .6s}
+.mini-label{font-size:8px;color:var(--faint);text-align:center}
+
+/* ── PROGRESS RING ── */
+.prog-ring{position:relative;width:56px;height:56px;flex-shrink:0}
+.prog-ring svg{transform:rotate(-90deg)}
+.prog-ring-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;font-weight:800}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:32px;color:var(--muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
+
+/* ── RESPONSIVE ── */
+@media(max-width:980px){.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){
+  .sidebar{position:fixed;left:0;transform:translateX(-102%);transition:transform .2s ease;box-shadow:18px 0 50px #0008}
+  .app-shell.sidebar-open .sidebar{transform:translateX(0)}
+  .app-shell.sidebar-open .sidebar-overlay{display:block}
+  .mobile-menu-btn{display:block}
+  .topbar{height:62px;padding:0 14px;justify-content:flex-start}
+  .page-heading{flex:1}
+  .page-title{font-size:15px}
+  .topbar .btn-sm{padding:7px 9px}
+  .view{padding:18px 14px 32px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ AUTH ══════════════ -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-dot">🌱</div>
+      <div>
+        <div class="auth-logo-name">AgroSense</div>
+        <div class="auth-logo-sub">by CyberBotLabs.io</div>
+      </div>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab on" onclick="switchAuthTab('login',this)">Iniciar sesión</div>
+      <div class="auth-tab" onclick="switchAuthTab('register',this)">Crear cuenta</div>
+    </div>
+    <!-- LOGIN -->
+    <div id="authLogin">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"/></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••••"/></div>
+      <button class="btn-auth" onclick="doLogin()" id="btnLogin">Ingresar</button>
+      <div style="text-align:center;margin-top:12px">
+        <button class="btn-sm" onclick="loginDemo()" style="font-size:11px">Demo — entrar sin cuenta</button>
+      </div>
+    </div>
+    <!-- REGISTER -->
+    <div id="authRegister" style="display:none">
+      <div class="field"><label>Nombre completo</label><input type="text" id="regNombre" placeholder="Juan García"/></div>
+      <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"/></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="regPass" placeholder="Mínimo 8 caracteres"/></div>
+      <div class="field"><label>Estado (México)</label>
+        <select id="regEstado">
+          <option value="">Selecciona...</option>
+          <option>Guanajuato</option><option>Oaxaca</option><option>Jalisco</option>
+          <option>Puebla</option><option>Michoacán</option><option>Chihuahua</option>
+          <option>Sonora</option><option>Veracruz</option><option>Sinaloa</option><option>Otro</option>
+        </select>
+      </div>
+      <button class="btn-auth" onclick="doRegister()" id="btnRegister">Crear cuenta gratis</button>
+    </div>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div class="app-shell" id="appShell">
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+  <aside class="sidebar" aria-label="Navegación principal">
+    <div class="logo">
+      <div class="logo-dot">↗</div>
+      <div><div>AgroSense</div><div class="logo-sub">Gestión agrícola</div></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-group">Principal</div>
+      <button class="nav-btn" onclick="window.location.href='/'"><span class="nav-icon">⌂</span><span class="nav-label">Inicio</span></button>
+      <button class="nav-btn on" data-view="dashboard" onclick="showView('dashboard',this)"><span class="nav-icon">▦</span><span class="nav-label">Resumen</span></button>
+      <a class="nav-btn" href="/agrosense_fase1_motor.html"><span class="nav-icon">◎</span><span class="nav-label">Analizar zona</span></a>
+
+      <div class="nav-group">Operación</div>
+      <button class="nav-btn" data-view="parcelas" onclick="showView('parcelas',this)"><span class="nav-icon">◇</span><span class="nav-label">Parcelas y ciclos</span></button>
+      <button class="nav-btn" data-view="bitacora" onclick="showView('bitacora',this)"><span class="nav-icon">▤</span><span class="nav-label">Bitácora de campo</span></button>
+      <button class="nav-btn" data-view="material" onclick="showView('material',this)"><span class="nav-icon">♧</span><span class="nav-label">Material vegetal</span></button>
+      <button class="nav-btn" data-view="fauna" onclick="showView('fauna',this)"><span class="nav-icon">⬡</span><span class="nav-label">Fauna nociva</span></button>
+
+      <div class="nav-group">Seguimiento</div>
+      <button class="nav-btn" data-view="flujo" onclick="showView('flujo',this)"><span class="nav-icon">$</span><span class="nav-label">Flujo de caja</span></button>
+      <button class="nav-btn" data-view="alertas" onclick="showView('alertas',this)"><span class="nav-icon">◉</span><span class="nav-label">Alertas</span><span class="alert-dot" id="alertDot" style="display:none"></span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="userAvatar">US</div>
+        <div class="user-chip">
+          <span id="userNombre"></span>
+          <span class="plan-chip pc-free" id="userPlan">Free</span>
+        </div>
+        <button class="btn-sm" onclick="doLogout()" title="Cerrar sesión">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-shell">
+    <header class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menú">☰</button>
+      <div class="page-heading">
+        <div class="page-eyebrow">AgroSense · Fase 2</div>
+        <div class="page-title" id="pageTitle">Resumen de operación</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-sm" onclick="showView('alertas',getNavButton('alertas'))">Ver alertas</button>
+      </div>
+    </header>
+
+    <div class="views">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="view on" id="view-dashboard">
+      <div class="section-title">Resumen general</div>
+      <div class="g4" style="margin-bottom:16px">
+        <div class="metric"><div class="metric-label">Parcelas activas</div><div class="metric-value" style="color:var(--lime)" id="statParcelas">—</div><div class="metric-sub">registradas</div></div>
+        <div class="metric"><div class="metric-label">Ciclos activos</div><div class="metric-value" style="color:var(--amber)" id="statCiclos">—</div><div class="metric-sub">en producción</div></div>
+        <div class="metric"><div class="metric-label">Invertido</div><div class="metric-value" style="color:var(--blue)" id="statInvertido">—</div><div class="metric-sub">ciclos activos</div></div>
+        <div class="metric"><div class="metric-label">Alertas</div><div class="metric-value" style="color:var(--red)" id="statAlertas">—</div><div class="metric-sub">sin leer</div></div>
+      </div>
+
+      <div class="g2">
+        <div>
+          <div class="section-title">Ciclos activos</div>
+          <div id="dashCiclos"><div class="empty"><div class="empty-icon">🌱</div>Sin ciclos activos</div></div>
+          <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="showView('parcelas',getNavButton('parcelas'))">+ Iniciar nuevo ciclo</button>
+        </div>
+        <div>
+          <div class="section-title">Últimas alertas</div>
+          <div id="dashAlertas"><div class="empty"><div class="empty-icon">🔔</div>Sin alertas pendientes</div></div>
+        </div>
+      </div>
+
+      <div class="section-title">Rendimiento climático — último análisis</div>
+      <div class="card" id="dashClima">
+        <div style="text-align:center;color:var(--muted);font-size:13px;padding:16px">Realiza un análisis de zona para ver datos climáticos</div>
+      </div>
+    </div>
+
+    <!-- ── PARCELAS ── -->
+    <div class="view" id="view-parcelas">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title" style="margin:0">Mis parcelas</div>
+        <button class="btn-primary" onclick="showModal('modalParcela')">+ Nueva parcela</button>
+      </div>
+      <div id="parcelasList"><div class="empty"><div class="empty-icon">🗺</div>No tienes parcelas registradas</div></div>
+
+      <div class="section-title" style="margin-top:20px">Ciclos de cultivo</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="btn-ghost" onclick="filterCiclos('all')" id="filtAll">Todos</button>
+        <button class="btn-sm" onclick="filterCiclos('activo')" id="filtActivo">Activos</button>
+        <button class="btn-sm" onclick="filterCiclos('planificado')" id="filtPlan">Planificados</button>
+        <button class="btn-sm" onclick="filterCiclos('cosechado')" id="filtCos">Cosechados</button>
+        <button class="btn-primary" style="margin-left:auto" onclick="showModal('modalCiclo')">+ Nuevo ciclo</button>
+      </div>
+      <div id="ciclosList"><div class="empty"><div class="empty-icon">🌾</div>Sin ciclos registrados</div></div>
+    </div>
+
+    <!-- ── MATERIAL VEGETAL ── -->
+    <div class="view" id="view-material">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:700">Dónde conseguir material vegetal</div>
+          <div style="font-size:12px;color:var(--muted)">Semillas, plantas, esquejes, bulbos y costos aproximados por proveedor</div>
+        </div>
+        <button class="btn-primary" onclick="showModal('modalMaterial')">+ Agregar fuente</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <select id="filterMaterialTipo" onchange="loadMaterial()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:7px 10px;font-size:12px;font-family:var(--font)">
+          <option value="">Todos los materiales</option>
+          <option value="semilla">Semilla</option>
+          <option value="planta">Planta</option>
+          <option value="esqueje">Esqueje</option>
+          <option value="bulbo">Bulbo</option>
+          <option value="plantula">Plántula</option>
+        </select>
+        <select id="filterMaterialCultivo" onchange="loadMaterial()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:7px 10px;font-size:12px;font-family:var(--font)">
+          <option value="">Todos los cultivos</option>
+        </select>
+      </div>
+
+      <div id="materialMetrics" style="margin-bottom:14px"></div>
+      <div id="materialList"><div class="empty"><div class="empty-icon">🌿</div>Sin fuentes registradas</div></div>
+    </div>
+
+    <!-- ── BITÁCORA ── -->
+    <div class="view" id="view-bitacora">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:700">Bitácora de campo</div>
+          <div style="font-size:12px;color:var(--muted)">Registro de actividades por ciclo</div>
+        </div>
+        <button class="btn-primary" onclick="showModal('modalBitacora')">+ Registrar actividad</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <select id="filterCiclo" onchange="loadBitacora()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:7px 10px;font-size:12px;font-family:var(--font)">
+          <option value="">Selecciona un ciclo...</option>
+        </select>
+        <select id="filterLabor" onchange="loadBitacora()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:7px 10px;font-size:12px;font-family:var(--font)">
+          <option value="">Todas las labores</option>
+          <option value="riego">Riego</option>
+          <option value="fumigacion">Fumigación</option>
+          <option value="fertilizacion">Fertilización</option>
+          <option value="deshierbe">Deshierbe</option>
+          <option value="cosecha">Cosecha</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+
+      <div id="bitacoraResumen" style="margin-bottom:14px"></div>
+      <div id="bitacoraList"><div class="empty"><div class="empty-icon">📓</div>Selecciona un ciclo para ver su bitácora</div></div>
+    </div>
+
+    <!-- ── FAUNA NOCIVA ── -->
+    <div class="view" id="view-fauna">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:700">Control y eliminación de fauna nociva</div>
+          <div style="font-size:12px;color:var(--muted)">Roedores, tuzas, ratones, ardillas, pájaros y otros daños en parcela</div>
+        </div>
+        <button class="btn-primary" onclick="showModal('modalFauna')">+ Registrar incidencia</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <select id="filterFaunaParcela" onchange="loadFauna()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:7px 10px;font-size:12px;font-family:var(--font)">
+          <option value="">Todas las parcelas</option>
+        </select>
+        <select id="filterFaunaEstado" onchange="loadFauna()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:7px 10px;font-size:12px;font-family:var(--font)">
+          <option value="">Todos los estados</option>
+          <option value="detectado">Detectado</option>
+          <option value="en_control">En control</option>
+          <option value="controlado">Controlado</option>
+          <option value="eliminado">Eliminado</option>
+        </select>
+      </div>
+
+      <div id="faunaMetrics" style="margin-bottom:14px"></div>
+      <div id="faunaList"><div class="empty"><div class="empty-icon">🛡</div>Sin incidencias registradas</div></div>
+    </div>
+
+    <!-- ── FLUJO DE CAJA ── -->
+    <div class="view" id="view-flujo">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:700">Flujo de caja</div>
+          <div style="font-size:12px;color:var(--muted)">Proyección y seguimiento financiero por ciclo</div>
+        </div>
+        <select id="flujoCicloSel" onchange="loadFlujo()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--white);padding:8px 12px;font-size:12px;font-family:var(--font)">
+          <option value="">Selecciona un ciclo...</option>
+        </select>
+      </div>
+
+      <div id="flujoMetrics" style="margin-bottom:14px"></div>
+      <div id="flujoChart"><div class="empty"><div class="empty-icon">💰</div>Selecciona un ciclo para ver el flujo de caja</div></div>
+      <div id="flujoTable"></div>
+    </div>
+
+    <!-- ── ALERTAS ── -->
+    <div class="view" id="view-alertas">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:16px;font-weight:700">Centro de alertas</div>
+        <button class="btn-sm" onclick="marcarTodasLeidas()">Marcar todas leídas</button>
+      </div>
+      <div id="alertasList"><div class="empty"><div class="empty-icon">🔔</div>Sin alertas pendientes</div></div>
+    </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════ MODALES ══════════════ -->
+
+<!-- Modal: Nueva Parcela -->
+<div id="modalParcela" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between">
+      Nueva parcela <button onclick="hideModal('modalParcela')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div class="form-field"><label>Nombre de la parcela</label><input id="pNombre" placeholder="Ej: Parcela norte — ajo"/></div>
+    <div class="form-grid">
+      <div class="form-field"><label>Latitud</label><input id="pLat" type="number" step="0.000001" placeholder="21.0186"/></div>
+      <div class="form-field"><label>Longitud</label><input id="pLng" type="number" step="0.000001" placeholder="-101.2591"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Área (hectáreas)</label><input id="pArea" type="number" step="0.1" placeholder="2.5"/></div>
+      <div class="form-field"><label>Altitud (msnm)</label><input id="pAlt" type="number" placeholder="1820"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Municipio</label><input id="pMunicipio" placeholder="San Miguel de Allende"/></div>
+      <div class="form-field"><label>Estado</label><input id="pEstado" placeholder="Guanajuato"/></div>
+    </div>
+    <div class="btn-row"><button class="btn-ghost" onclick="hideModal('modalParcela')">Cancelar</button><button class="btn-primary" onclick="guardarParcela()">Guardar parcela</button></div>
+  </div>
+</div>
+
+<!-- Modal: Nuevo Ciclo -->
+<div id="modalCiclo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between">
+      Iniciar ciclo de cultivo <button onclick="hideModal('modalCiclo')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div class="form-field"><label>Parcela</label>
+      <select id="cParcelaId"><option value="">Selecciona parcela...</option></select>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Cultivo</label>
+        <select id="cCultivoId" onchange="document.getElementById('cCultivoNombre').value=this.options[this.selectedIndex].text">
+          <option value="">Selecciona...</option>
+          <option value="ajo">🧄 Ajo</option>
+          <option value="lavanda">💜 Lavanda</option>
+          <option value="quinoa">🌾 Quinoa</option>
+          <option value="brocoli">🥦 Brócoli</option>
+          <option value="chile">🌶 Chile</option>
+          <option value="tomate">🍅 Tomate</option>
+          <option value="maiz">🌽 Maíz</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Variedad</label><input id="cVariedad" placeholder="Ej: Morado, Chino"/></div>
+    </div>
+    <input type="hidden" id="cCultivoNombre"/>
+    <div class="form-grid">
+      <div class="form-field"><label>Fecha de siembra</label><input type="date" id="cFechaSiembra"/></div>
+      <div class="form-field"><label>Cosecha estimada</label><input type="date" id="cFechaCosecha"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Área (ha)</label><input id="cArea" type="number" step="0.1" placeholder="2.5"/></div>
+      <div class="form-field"><label>Semilla (kg)</label><input id="cSemilla" type="number" placeholder="600"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Presupuesto total ($)</label><input id="cPresupuesto" type="number" placeholder="123000"/></div>
+      <div class="form-field"><label>Tipo de manejo</label>
+        <select id="cManejo"><option value="convencional">Convencional</option><option value="organico">Orgánico</option><option value="transicion">En transición</option></select>
+      </div>
+    </div>
+    <div class="form-field"><label>Objetivo</label>
+      <select id="cObjetivo"><option value="fresco">Venta en fresco</option><option value="transformado">Producto transformado</option><option value="mixto">Mixto</option></select>
+    </div>
+    <div class="form-field"><label>Notas iniciales</label><textarea id="cNotas" placeholder="Condiciones del suelo, semilla usada, observaciones..."></textarea></div>
+    <div class="btn-row"><button class="btn-ghost" onclick="hideModal('modalCiclo')">Cancelar</button><button class="btn-primary" onclick="guardarCiclo()">Iniciar ciclo</button></div>
+  </div>
+</div>
+
+<!-- Modal: Bitácora -->
+<div id="modalBitacora" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between">
+      Registrar actividad en campo <button onclick="hideModal('modalBitacora')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Ciclo</label>
+        <select id="bCicloId"><option value="">Selecciona ciclo...</option></select>
+      </div>
+      <div class="form-field"><label>Fecha</label><input type="date" id="bFecha"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Labor</label>
+        <select id="bLabor">
+          <option value="riego">Riego</option>
+          <option value="fumigacion">Fumigación</option>
+          <option value="fertilizacion">Fertilización</option>
+          <option value="deshierbe">Deshierbe</option>
+          <option value="cosecha">Cosecha</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Temp. campo (°C)</label><input id="bTemp" type="number" step="0.1" placeholder="18.5"/></div>
+    </div>
+    <div class="form-field"><label>Descripción de la actividad</label><textarea id="bDesc" placeholder="Qué se hizo, cómo, resultados observados..."></textarea></div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--lime);margin:10px 0 8px">Insumo aplicado (opcional)</div>
+    <div class="form-grid">
+      <div class="form-field"><label>Insumo</label><input id="bInsumoNombre" placeholder="Trichoderma · Mancozeb..."/></div>
+      <div class="form-field"><label>Tipo</label>
+        <select id="bInsumoTipo">
+          <option value="">Sin insumo</option>
+          <option value="bioinsumo">Bioinsumo</option>
+          <option value="agroquimico">Agroquímico</option>
+          <option value="fertilizante">Fertilizante</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Cantidad</label><input id="bCantidad" type="number" placeholder="2.5"/></div>
+      <div class="form-field"><label>Unidad</label>
+        <select id="bUnidad"><option value="L">Litros</option><option value="kg">Kg</option><option value="m3">m³</option></select>
+      </div>
+    </div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--lime);margin:10px 0 8px">Costos</div>
+    <div class="form-grid">
+      <div class="form-field"><label>Costo insumo ($)</label><input id="bCostoInsumo" type="number" placeholder="0"/></div>
+      <div class="form-field"><label>Costo mano obra ($)</label><input id="bCostoMO" type="number" placeholder="0"/></div>
+    </div>
+    <div class="form-field"><label>Observaciones</label><textarea id="bObs" style="min-height:56px" placeholder="Condiciones, resultados, notas adicionales..."></textarea></div>
+    <div class="btn-row"><button class="btn-ghost" onclick="hideModal('modalBitacora')">Cancelar</button><button class="btn-primary" onclick="guardarBitacora()">Guardar actividad</button></div>
+  </div>
+</div>
+
+<!-- Modal: Fauna nociva -->
+<div id="modalFauna" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between">
+      Registrar fauna nociva <button onclick="hideModal('modalFauna')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Parcela afectada</label>
+        <select id="fParcelaId"><option value="">Selecciona parcela...</option></select>
+      </div>
+      <div class="form-field"><label>Especie</label>
+        <select id="fEspecie">
+          <option value="roedores">Roedores</option>
+          <option value="tuza">Tuza</option>
+          <option value="raton">Ratón</option>
+          <option value="ardilla">Ardilla</option>
+          <option value="pajaros">Pájaros</option>
+          <option value="conejo">Conejo</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Fecha</label><input type="date" id="fFecha"/></div>
+      <div class="form-field"><label>Severidad</label>
+        <select id="fSeveridad">
+          <option value="baja">Baja</option>
+          <option value="media" selected>Media</option>
+          <option value="alta">Alta</option>
+          <option value="critica">Crítica</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Zona afectada</label><input id="fUbicacion" placeholder="Surco 8, bodega, lindero norte..."/></div>
+      <div class="form-field"><label>Daño estimado</label><input id="fDano" placeholder="5% de plantas, semilla comida..."/></div>
+    </div>
+    <div class="form-field"><label>Evidencia observada</label><input id="fEvidencia" placeholder="Madrigueras, heces, mordidas, huellas, picoteo..."/></div>
+    <div class="form-field"><label>Método de control o eliminación</label>
+      <select id="fMetodo">
+        <option value="trampas">Trampas mecánicas</option>
+        <option value="barreras">Barreras físicas / malla</option>
+        <option value="manejo_habitat">Manejo de hábitat y limpieza</option>
+        <option value="repelente">Repelente autorizado</option>
+        <option value="ahuyentador">Ahuyentador visual o sonoro</option>
+        <option value="control_profesional">Control profesional</option>
+        <option value="monitoreo">Solo monitoreo</option>
+      </select>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Responsable</label><input id="fResponsable" placeholder="Encargado de campo"/></div>
+      <div class="form-field"><label>Costo control ($)</label><input id="fCosto" type="number" placeholder="0"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Estado</label>
+        <select id="fEstado">
+          <option value="detectado">Detectado</option>
+          <option value="en_control">En control</option>
+          <option value="controlado">Controlado</option>
+          <option value="eliminado">Eliminado</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Resultado</label><input id="fResultado" placeholder="Pendiente, capturas, daño detenido..."/></div>
+    </div>
+    <div class="form-field"><label>Notas</label><textarea id="fNotas" placeholder="Recomendaciones, reincidencia, ubicación exacta, seguimiento..."></textarea></div>
+    <div class="btn-row"><button class="btn-ghost" onclick="hideModal('modalFauna')">Cancelar</button><button class="btn-primary" onclick="guardarFauna()">Guardar incidencia</button></div>
+  </div>
+</div>
+
+<!-- Modal: Material vegetal -->
+<div id="modalMaterial" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between">
+      Agregar fuente de material vegetal <button onclick="hideModal('modalMaterial')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Cultivo</label>
+        <select id="mCultivoId" onchange="document.getElementById('mCultivoNombre').value=this.options[this.selectedIndex].text.replace(/^[^A-Za-zÁÉÍÓÚáéíóúÑñ]+\\s*/, '')">
+          <option value="">Selecciona...</option>
+          <option value="ajo">🧄 Ajo</option>
+          <option value="lavanda">💜 Lavanda</option>
+          <option value="quinoa">🌾 Quinoa</option>
+          <option value="brocoli">🥦 Brócoli</option>
+          <option value="chile">🌶 Chile</option>
+          <option value="tomate">🍅 Tomate</option>
+          <option value="maiz">🌽 Maíz</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Nombre cultivo</label><input id="mCultivoNombre" placeholder="Ej: Ajo"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Tipo de material</label>
+        <select id="mTipoMaterial">
+          <option value="semilla">Semilla</option>
+          <option value="planta">Planta</option>
+          <option value="esqueje">Esqueje</option>
+          <option value="bulbo">Bulbo</option>
+          <option value="plantula">Plántula</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Variedad</label><input id="mVariedad" placeholder="Morado, angustifolia, saladette..."/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Proveedor o fuente</label><input id="mProveedor" placeholder="Vivero, casa semillera, productor..."/></div>
+      <div class="form-field"><label>Tipo proveedor</label>
+        <select id="mProveedorTipo">
+          <option value="vivero">Vivero</option>
+          <option value="casa_semillera">Casa semillera</option>
+          <option value="productor_local">Productor local</option>
+          <option value="cooperativa">Cooperativa</option>
+          <option value="mercado_agricola">Mercado agrícola</option>
+          <option value="en_linea">En línea</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Ubicación</label><input id="mUbicacion" placeholder="Municipio, estado o región"/></div>
+      <div class="form-field"><label>Contacto</label><input id="mContacto" placeholder="Teléfono, email o referencia"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Costo mínimo ($)</label><input id="mCostoMin" type="number" step="0.01" placeholder="0"/></div>
+      <div class="form-field"><label>Costo máximo ($)</label><input id="mCostoMax" type="number" step="0.01" placeholder="0"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Unidad</label>
+        <select id="mUnidad">
+          <option value="kg">kg</option>
+          <option value="g">g</option>
+          <option value="pieza">pieza</option>
+          <option value="charola">charola</option>
+          <option value="millar">millar</option>
+          <option value="paquete">paquete</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Cantidad mínima</label><input id="mCantidadMinima" placeholder="1 kg, 100 plantas, 1 charola..."/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Disponibilidad</label>
+        <select id="mDisponibilidad">
+          <option value="consultar">Consultar</option>
+          <option value="inmediata">Inmediata</option>
+          <option value="por_temporada">Por temporada</option>
+          <option value="sobre_pedido">Sobre pedido</option>
+          <option value="agotado">Agotado</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Certificación / calidad</label><input id="mCertificacion" placeholder="Certificada, orgánica, criolla, libre de patógenos..."/></div>
+    </div>
+    <div class="form-field"><label>Notas de compra</label><textarea id="mNotas" placeholder="Tiempo de entrega, calibre, germinación, recomendación, condiciones de compra..."></textarea></div>
+    <div class="btn-row"><button class="btn-ghost" onclick="hideModal('modalMaterial')">Cancelar</button><button class="btn-primary" onclick="guardarMaterial()">Guardar fuente</button></div>
+  </div>
+</div>
+
+<script>
+// ── ESTADO GLOBAL ──────────────────────────────────────────────
+const API_BASE = window.location.protocol === "file:" ? "http://localhost:3000/api/v2" : "/api/v2";
+let authToken  = localStorage.getItem("agrosense_token") || null;
+let currentUser= JSON.parse(localStorage.getItem("agrosense_user") || "null");
+let state = { parcelas:[], ciclos:[], alertas:[], bitacora:[], flujo:[], fauna:[], material:[] };
+
+// ── DEMO MODE (sin servidor) ────────────────────────────────────
+let DEMO_MODE = localStorage.getItem("agrosense_demo") === "1";
+
+const DEMO_DATA = {
+  user: { id:"demo-1", nombre:"Productor Demo", email:"demo@agrosense.mx", plan:"pro" },
+  parcelas: [
+    { id:"p1", nombre:"Parcela Norte — Ajo", lat:21.02, lng:-101.26, altitud_m:1820, area_ha:3.5, municipio:"Guanajuato", estado:"Guanajuato", ciclos_activos:1, ciclos_total:2 },
+    { id:"p2", nombre:"Parcela Sur — Lavanda", lat:21.01, lng:-101.28, altitud_m:1900, area_ha:1.8, municipio:"Guanajuato", estado:"Guanajuato", ciclos_activos:0, ciclos_total:1 },
+  ],
+  ciclos: [
+    { id:"c1", parcela_id:"p1", parcela_nombre:"Parcela Norte", cultivo_id:"ajo", cultivo_nombre:"🧄 Ajo", variedad:"Morado", estado:"activo", area_ha:3.5, fecha_siembra:"2025-10-15", fecha_cosecha_est:"2026-07-15", presupuesto_total:430500, costo_real_total:198400, ingreso_total:0, tipo_manejo:"convencional", objetivo:"transformado", registros:"12", costo_acumulado:198400 },
+    { id:"c2", parcela_id:"p2", parcela_nombre:"Parcela Sur", cultivo_id:"lavanda", cultivo_nombre:"💜 Lavanda", variedad:"Angustifolia", estado:"planificado", area_ha:1.8, fecha_siembra:"2026-03-01", fecha_cosecha_est:"2027-07-01", presupuesto_total:153000, costo_real_total:0, ingreso_total:0, tipo_manejo:"organico", objetivo:"transformado", registros:"0", costo_acumulado:0 },
+  ],
+  bitacora: [
+    { id:"b1", ciclo_id:"c1", fecha:"2026-06-10", labor:"fumigacion", descripcion:"Aplicación preventiva de Trichoderma en zona norte. Se observaron primeros síntomas de roya en 3 plantas aisladas.", insumo_nombre:"Trichoderma harzianum", insumo_tipo:"bioinsumo", insumo_cantidad:2.5, insumo_unidad:"L", insumo_costo:380, costo_labor:0, costo_mano_obra:800, temp_campo:19.5 },
+    { id:"b2", ciclo_id:"c1", fecha:"2026-06-05", labor:"riego", descripcion:"Riego por goteo completo. 4 horas de operación. Revisión de cintas — una cinta rota en surco 8 reemplazada.", insumo_nombre:null, insumo_tipo:null, insumo_cantidad:null, insumo_unidad:null, insumo_costo:0, costo_labor:150, costo_mano_obra:600, temp_campo:21.0 },
+    { id:"b3", ciclo_id:"c1", fecha:"2026-05-28", labor:"fertilizacion", descripcion:"Fertilización foliar con micronutrientes etapa formación de bulbo. Aplicación manual con mochila.", insumo_nombre:"Quelato de Zinc + Boro", insumo_tipo:"fertilizante", insumo_cantidad:1.2, insumo_unidad:"kg", insumo_costo:520, costo_labor:0, costo_mano_obra:400, temp_campo:18.0 },
+  ],
+  alertas: [
+    { id:"a1", tipo:"helada", nivel:"warning", titulo:"Temperaturas bajas previstas", mensaje:"Pronóstico indica temperaturas de 3–4°C en los próximos 4 días. El ajo en etapa de bulbificación puede verse afectado.", accion:"Activar riego nocturno y preparar agrofibra", creado_en:new Date(Date.now()-7200000).toISOString(), leida:false },
+    { id:"a2", tipo:"plaga", nivel:"info", titulo:"Monitoreo de trips recomendado", mensaje:"Condiciones climáticas actuales (temperatura alta, baja humedad) favorecen proliferación de Thrips tabaci en ajo.", accion:"Revisar trampas pegajosas y hojas jóvenes", creado_en:new Date(Date.now()-86400000).toISOString(), leida:false },
+    { id:"a3", tipo:"mercado", nivel:"info", titulo:"Precio del ajo negro al alza", mensaje:"Precio de ajo negro gourmet subió 18% en mercados de CDMX. Momento ideal para negociar contratos de venta anticipada.", accion:null, creado_en:new Date(Date.now()-172800000).toISOString(), leida:false },
+  ],
+  fauna: [
+    { id:"f1", parcela_id:"p1", parcela_nombre:"Parcela Norte — Ajo", especie:"tuza", severidad:"alta", fecha:"2026-06-11", ubicacion:"Lindero norte", evidencia:"Túneles activos y montículos recientes", dano_estimado:"12 plantas dañadas", metodo_control:"trampas", responsable:"Encargado campo", costo_control:650, resultado:"3 trampas instaladas", estado:"en_control", notas:"Revisar cada mañana durante 7 días" },
+    { id:"f2", parcela_id:"p2", parcela_nombre:"Parcela Sur — Lavanda", especie:"pajaros", severidad:"media", fecha:"2026-06-08", ubicacion:"Área central", evidencia:"Picoteo en brotes jóvenes", dano_estimado:"Daño ligero en bordes", metodo_control:"ahuyentador", responsable:"Productor", costo_control:420, resultado:"Cintas reflectantes colocadas", estado:"controlado", notas:"Reforzar antes de floración" },
+  ],
+  material: [
+    { id:"m1", cultivo_id:"ajo", cultivo_nombre:"Ajo", tipo_material:"bulbo", variedad:"Morado", proveedor_nombre:"Productor local validado", proveedor_tipo:"productor_local", ubicacion:"Guanajuato", contacto:"Referencia de campo", unidad:"kg", costo_min:45, costo_max:85, cantidad_minima:"20 kg", disponibilidad:"por_temporada", certificacion:"Seleccionado para siembra", estado:"activo", notas:"Confirmar calibre y sanidad antes de comprar" },
+    { id:"m2", cultivo_id:"lavanda", cultivo_nombre:"Lavanda", tipo_material:"esqueje", variedad:"Angustifolia", proveedor_nombre:"Vivero regional", proveedor_tipo:"vivero", ubicacion:"Bajío", contacto:"Cotizar por lote", unidad:"pieza", costo_min:18, costo_max:35, cantidad_minima:"100 piezas", disponibilidad:"sobre_pedido", certificacion:"Planta enraizada", estado:"activo", notas:"Pedir plantas aclimatadas y revisar raíz" },
+    { id:"m3", cultivo_id:"tomate", cultivo_nombre:"Tomate", tipo_material:"plantula", variedad:"Saladette", proveedor_nombre:"Casa semillera / invernadero", proveedor_tipo:"casa_semillera", ubicacion:"México", contacto:"Distribuidor autorizado", unidad:"charola", costo_min:180, costo_max:320, cantidad_minima:"1 charola", disponibilidad:"consultar", certificacion:"Semilla híbrida", estado:"activo", notas:"Validar fecha de siembra y vigor de plántula" },
+  ],
+  flujo: [
+    { mes:10, anio:2025, egreso_proj:85000, ingreso_proj:0, egreso_real:82400, ingreso_real:0, saldo_proj:-85000, saldo_real:-82400 },
+    { mes:11, anio:2025, egreso_proj:42000, ingreso_proj:0, egreso_real:38600, ingreso_real:0, saldo_proj:-42000, saldo_real:-38600 },
+    { mes:12, anio:2025, egreso_proj:28000, ingreso_proj:0, egreso_real:25800, ingreso_real:0, saldo_proj:-28000, saldo_real:-25800 },
+    { mes:1,  anio:2026, egreso_proj:22000, ingreso_proj:0, egreso_real:21400, ingreso_real:0, saldo_proj:-22000, saldo_real:-21400 },
+    { mes:2,  anio:2026, egreso_proj:18000, ingreso_proj:0, egreso_real:18200, ingreso_real:0, saldo_proj:-18000, saldo_real:-18200 },
+    { mes:3,  anio:2026, egreso_proj:22000, ingreso_proj:0, egreso_real:12000, ingreso_real:0, saldo_proj:-22000, saldo_real:-12000 },
+    { mes:4,  anio:2026, egreso_proj:35000, ingreso_proj:0, egreso_real:0,     ingreso_real:0, saldo_proj:-35000, saldo_real:0 },
+    { mes:5,  anio:2026, egreso_proj:45000, ingreso_proj:0, egreso_real:0,     ingreso_real:0, saldo_proj:-45000, saldo_real:0 },
+    { mes:6,  anio:2026, egreso_proj:38000, ingreso_proj:0, egreso_real:0,     ingreso_real:0, saldo_proj:-38000, saldo_real:0 },
+    { mes:7,  anio:2026, egreso_proj:55000, ingreso_proj:0, egreso_real:0,     ingreso_real:0, saldo_proj:-55000, saldo_real:0 },
+    { mes:8,  anio:2026, egreso_proj:22000, ingreso_proj:960000, egreso_real:0, ingreso_real:0, saldo_proj:938000, saldo_real:0 },
+    { mes:9,  anio:2026, egreso_proj:18000, ingreso_proj:2400000, egreso_real:0, ingreso_real:0, saldo_proj:2382000, saldo_real:0 },
+  ],
+};
+
+// ── AUTH ───────────────────────────────────────────────────────
+
+function switchAuthTab(tab, el) {
+  document.querySelectorAll(".auth-tab").forEach(t=>t.classList.remove("on"));
+  el.classList.add("on");
+  document.getElementById("authLogin").style.display    = tab==="login"    ? "block":"none";
+  document.getElementById("authRegister").style.display = tab==="register" ? "block":"none";
+}
+
+function showAuthError(msg) {
+  const el=document.getElementById("authErr");
+  el.textContent=msg; el.style.display="block";
+  setTimeout(()=>{el.style.display="none"},5000);
+}
+
+function hideAuthError() {
+  document.getElementById("authErr").style.display="none";
+}
+
+async function doLogin() {
+  const email=document.getElementById("loginEmail").value.trim();
+  const pass=document.getElementById("loginPass").value;
+  if (!email||!pass) { showAuthError("Email y contraseña requeridos"); return; }
+  document.getElementById("btnLogin").disabled=true;
+  try {
+    hideAuthError();
+    const r=await fetch(`${API_BASE}/auth/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password:pass})});
+    const d=await parseApiResponse(r);
+    if (!d.ok) throw new Error(d.error);
+    saveAuth(d.data.accessToken, d.data.user);
+    await initApp();
+  } catch(e) { showAuthError(e.message||"Error de inicio de sesión"); }
+  finally { document.getElementById("btnLogin").disabled=false; }
+}
+
+async function doRegister() {
+  const nombre=document.getElementById("regNombre").value.trim();
+  const email=document.getElementById("regEmail").value.trim();
+  const pass=document.getElementById("regPass").value;
+  const estado=document.getElementById("regEstado").value;
+  if (!nombre||!email||!pass) { showAuthError("Todos los campos son requeridos"); return; }
+  document.getElementById("btnRegister").disabled=true;
+  try {
+    hideAuthError();
+    const r=await fetch(`${API_BASE}/auth/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nombre,email,password:pass,estado_mx:estado})});
+    const d=await parseApiResponse(r);
+    if (!d.ok) throw new Error(d.error);
+    saveAuth(d.data.accessToken, d.data.user);
+    await initApp();
+  } catch(e) { showAuthError(e.message||"Error al crear cuenta"); }
+  finally { document.getElementById("btnRegister").disabled=false; }
+}
+
+function loginDemo() {
+  DEMO_MODE = true;
+  localStorage.setItem("agrosense_demo", "1");
+  saveAuth("demo-token", DEMO_DATA.user);
+  state.parcelas=DEMO_DATA.parcelas;
+  state.ciclos=DEMO_DATA.ciclos;
+  state.alertas=DEMO_DATA.alertas;
+  state.bitacora=DEMO_DATA.bitacora;
+  state.flujo=DEMO_DATA.flujo;
+  state.fauna=DEMO_DATA.fauna;
+  state.material=DEMO_DATA.material;
+  initApp();
+}
+
+function saveAuth(token, user) {
+  authToken=token;
+  currentUser=user;
+  if (token !== "demo-token") {
+    DEMO_MODE=false;
+    localStorage.removeItem("agrosense_demo");
+  }
+  localStorage.setItem("agrosense_token", token);
+  localStorage.setItem("agrosense_user", JSON.stringify(user));
+}
+
+function doLogout() {
+  authToken=null; currentUser=null;
+  localStorage.removeItem("agrosense_token");
+  localStorage.removeItem("agrosense_user");
+  localStorage.removeItem("agrosense_demo");
+  DEMO_MODE=false;
+  document.getElementById("authScreen").style.display="flex";
+  document.getElementById("appShell").style.display="none";
+}
+
+async function apiCall(path, opts={}) {
+  if (DEMO_MODE) return null;
+  const r=await fetch(`${API_BASE}${path}`,{
+    ...opts,
+    headers:{"Content-Type":"application/json","Authorization":`Bearer ${authToken}`,...(opts.headers||{})},
+  });
+  const d=await parseApiResponse(r);
+  if (r.status===401) {
+    authToken=null; currentUser=null;
+    localStorage.removeItem("agrosense_token");
+    localStorage.removeItem("agrosense_user");
+    localStorage.removeItem("agrosense_demo");
+  }
+  if (!d.ok) throw new Error(d.error);
+  return d.data;
+}
+
+async function parseApiResponse(response) {
+  const text=await response.text();
+  let data=null;
+  try { data=text ? JSON.parse(text) : {}; }
+  catch { data={ ok:false, error:text || `HTTP ${response.status}` }; }
+  if (!response.ok && data.ok!==false) data={ ok:false, error:data.error || `HTTP ${response.status}` };
+  return data;
+}
+
+function getNavButton(viewName) {
+  return document.querySelector(`.nav-btn[data-view="${viewName}"]`);
+}
+
+function emptyHtml(icon, text) {
+  return `<div class="empty"><div class="empty-icon">${icon}</div>${escapeHtml(text)}</div>`;
+}
+
+// ── APP INIT ───────────────────────────────────────────────────
+
+async function initApp() {
+  document.getElementById("authScreen").style.display="none";
+  document.getElementById("appShell").style.display="flex";
+  document.getElementById("userNombre").textContent=currentUser?.nombre?.split(" ")[0]||"Usuario";
+  document.getElementById("userAvatar").textContent=(currentUser?.nombre||"Usuario").split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase();
+  const pc=document.getElementById("userPlan");
+  const plan=currentUser?.plan||"free";
+  pc.textContent=plan.charAt(0).toUpperCase()+plan.slice(1);
+  pc.className=`plan-chip pc-${plan}`;
+
+  if (!DEMO_MODE) {
+    const loads = await Promise.allSettled([
+      apiCall("/parcelas"),
+      apiCall("/ciclos"),
+      apiCall("/alertas"),
+      apiCall("/fauna"),
+      apiCall("/material"),
+    ]);
+    const keys=["parcelas","ciclos","alertas","fauna","material"];
+    loads.forEach((result,index)=>{
+      state[keys[index]]=result.status==="fulfilled" && Array.isArray(result.value) ? result.value : [];
+      if (result.status==="rejected") console.warn(`No se pudo cargar ${keys[index]}:`, result.reason);
+    });
+  }
+
+  renderDashboard();
+  renderParcelas();
+  renderCiclos();
+  renderAlertas();
+  renderFauna();
+  renderMaterial();
+  populateCicloSelects();
+}
+
+// ── VIEWS ──────────────────────────────────────────────────────
+
+function showView(v, btn) {
+  const view=document.getElementById("view-"+v);
+  if (!view) return;
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
+  document.querySelectorAll(".nav-btn").forEach(el=>el.classList.remove("on"));
+  view.classList.add("on");
+  if (btn) btn.classList.add("on");
+  const titles={
+    dashboard:"Resumen de operación",
+    parcelas:"Parcelas y ciclos",
+    material:"Material vegetal",
+    bitacora:"Bitácora de campo",
+    fauna:"Control de fauna nociva",
+    flujo:"Flujo de caja",
+    alertas:"Centro de alertas"
+  };
+  document.getElementById("pageTitle").textContent=titles[v]||"AgroSense";
+  closeSidebar();
+}
+
+function toggleSidebar() {
+  document.getElementById("appShell").classList.toggle("sidebar-open");
+}
+
+function closeSidebar() {
+  document.getElementById("appShell").classList.remove("sidebar-open");
+}
+
+// ── MODALES ────────────────────────────────────────────────────
+
+function showModal(id) { document.getElementById(id).style.display="flex"; }
+function hideModal(id) { document.getElementById(id).style.display="none"; }
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+
+function renderDashboard() {
+  const alertasPend=state.alertas.filter(a=>!a.leida).length;
+  document.getElementById("statParcelas").textContent=state.parcelas.length;
+  document.getElementById("statCiclos").textContent=state.ciclos.filter(c=>c.estado==="activo").length;
+  document.getElementById("statInvertido").textContent="$"+state.ciclos.reduce((s,c)=>s+parseFloat(c.costo_real_total||0),0).toLocaleString("es-MX");
+  document.getElementById("statAlertas").textContent=alertasPend;
+  document.getElementById("alertDot").style.display=alertasPend>0?"block":"none";
+
+  // Ciclos activos
+  const activos=state.ciclos.filter(c=>c.estado==="activo");
+  document.getElementById("dashCiclos").innerHTML=activos.length?activos.map(c=>{
+    const pct=c.presupuesto_total>0?Math.round(c.costo_real_total/c.presupuesto_total*100):0;
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div><div style="font-size:14px;font-weight:700">${c.cultivo_nombre}</div>
+        <div style="font-size:11px;color:var(--muted)">${c.parcela_nombre} · ${c.area_ha||0}ha · ${c.tipo_manejo}</div></div>
+        <span class="badge badge-ok">Activo</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <span style="font-size:10px;color:var(--muted);min-width:80px">Presupuesto</span>
+        <div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${pct>90?"var(--red)":pct>70?"var(--amber)":"var(--lime)"};border-radius:3px"></div>
+        </div>
+        <span style="font-size:10px;font-weight:700;color:${pct>90?"var(--red)":"var(--lime)"}">${pct}%</span>
+      </div>
+      <div style="display:flex;gap:12px;font-size:11px;color:var(--muted)">
+        <span>Siembra: ${c.fecha_siembra}</span>
+        <span>Cosecha est.: ${c.fecha_cosecha_est||"—"}</span>
+        <span>${c.registros||0} actividades</span>
+      </div>
+    </div>`}).join("")
+    : `<div class="empty"><div class="empty-icon">🌱</div>Sin ciclos activos</div>`;
+
+  // Alertas dashboard
+  document.getElementById("dashAlertas").innerHTML=state.alertas.slice(0,3).map(a=>renderAlerta(a)).join("")||
+    `<div class="empty"><div class="empty-icon">🔔</div>Sin alertas pendientes</div>`;
+
+  // Clima demo
+  document.getElementById("dashClima").innerHTML=`
+    <div class="g3">
+      <div class="metric"><div class="metric-label">Temp. promedio 7d</div><div class="metric-value" style="color:var(--lime)">19.4°C</div><div class="metric-sub">Guanajuato · API real</div></div>
+      <div class="metric"><div class="metric-label">Lluvia anual real</div><div class="metric-value" style="color:var(--blue)">818mm</div><div class="metric-sub">12 meses Open-Meteo</div></div>
+      <div class="metric"><div class="metric-label">Heladas previstas</div><div class="metric-value" style="color:var(--amber)">0</div><div class="metric-sub">próximos 16 días</div></div>
+    </div>`;
+}
+
+// ── PARCELAS ──────────────────────────────────────────────────
+
+function renderParcelas() {
+  document.getElementById("parcelasList").innerHTML=state.parcelas.length?
+    `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Ubicación</th><th>Área</th><th>Ciclos</th><th>Estado</th></tr></thead><tbody>
+    ${state.parcelas.map(p=>`<tr>
+      <td><div style="font-weight:600">${p.nombre}</div></td>
+      <td><div style="font-size:11px;color:var(--muted)">${p.municipio||"—"}, ${p.estado||"—"}</div><div style="font-size:10px;color:var(--faint)">${p.altitud_m||"—"} msnm</div></td>
+      <td>${p.area_ha||"—"} ha</td>
+      <td>${p.ciclos_activos||0} activos / ${p.ciclos_total||0} total</td>
+      <td><span class="badge badge-ok">Activa</span></td>
+    </tr>`).join("")}
+    </tbody></table></div>`
+    :`<div class="empty"><div class="empty-icon">🗺</div>No tienes parcelas. Crea la primera.</div>`;
+}
+
+async function guardarParcela() {
+  const nombre=document.getElementById("pNombre").value.trim();
+  const lat=parseFloat(document.getElementById("pLat").value);
+  const lng=parseFloat(document.getElementById("pLng").value);
+  if (!nombre||!Number.isFinite(lat)||!Number.isFinite(lng)) { alert("Nombre, latitud y longitud son requeridos"); return; }
+
+  const data={ nombre, lat, lng,
+    altitud_m: parseInt(document.getElementById("pAlt").value)||null,
+    area_ha: parseFloat(document.getElementById("pArea").value)||null,
+    municipio: document.getElementById("pMunicipio").value,
+    estado: document.getElementById("pEstado").value,
+  };
+
+  if (DEMO_MODE) {
+    data.id="p"+Date.now(); data.ciclos_activos=0; data.ciclos_total=0;
+    state.parcelas.push(data);
+  } else {
+    const saved=await apiCall("/parcelas",{method:"POST",body:JSON.stringify(data)});
+    state.parcelas.push(saved);
+  }
+  hideModal("modalParcela");
+  renderParcelas();
+  renderDashboard();
+  populateCicloSelects();
+}
+
+// ── CICLOS ────────────────────────────────────────────────────
+
+function renderCiclos(filter="all") {
+  const list=filter==="all"?state.ciclos:state.ciclos.filter(c=>c.estado===filter);
+  document.getElementById("ciclosList").innerHTML=list.length?
+    list.map(c=>{
+      const roi=c.presupuesto_total>0?Math.round(c.costo_real_total/c.presupuesto_total*100):0;
+      const badgeClass=c.estado==="activo"?"badge-ok":c.estado==="planificado"?"badge-info":c.estado==="cosechado"?"badge-neutral":"badge-danger";
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+          <div><div style="font-size:14px;font-weight:700">${c.cultivo_nombre}</div>
+          <div style="font-size:11px;color:var(--muted)">${c.parcela_nombre} · ${c.area_ha||0}ha · ${c.tipo_manejo} · obj: ${c.objetivo}</div></div>
+          <div style="display:flex;gap:6px"><span class="badge ${badgeClass}">${c.estado}</span><span class="badge badge-neutral">${c.variedad||"Sin variedad"}</span></div>
+        </div>
+        <div class="g3" style="gap:8px;margin-bottom:8px">
+          <div style="font-size:11px"><span style="color:var(--muted)">Siembra</span><br><strong>${c.fecha_siembra||"—"}</strong></div>
+          <div style="font-size:11px"><span style="color:var(--muted)">Cosecha est.</span><br><strong>${c.fecha_cosecha_est||"—"}</strong></div>
+          <div style="font-size:11px"><span style="color:var(--muted)">Actividades</span><br><strong>${c.registros||0}</strong></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:6px">
+          <div>Presupuesto: <strong>$${parseFloat(c.presupuesto_total||0).toLocaleString("es-MX")}</strong></div>
+          <div>Costo real: <strong style="color:${roi>90?"var(--red)":"var(--white)"}">$${parseFloat(c.costo_real_total||0).toLocaleString("es-MX")}</strong> (${roi}%)</div>
+          <div>Ingreso: <strong style="color:var(--lime)">$${parseFloat(c.ingreso_total||0).toLocaleString("es-MX")}</strong></div>
+        </div>
+      </div>`}).join("")
+    :`<div class="empty"><div class="empty-icon">🌾</div>Sin ciclos en este estado</div>`;
+}
+
+function filterCiclos(f) {
+  document.querySelectorAll("[id^=filt]").forEach(b=>b.className="btn-sm");
+  const ids={all:"filtAll",activo:"filtActivo",planificado:"filtPlan",cosechado:"filtCos"};
+  document.getElementById(ids[f]).className="btn-ghost";
+  renderCiclos(f);
+}
+
+async function guardarCiclo() {
+  const parcelaId=document.getElementById("cParcelaId").value;
+  const cultivoId=document.getElementById("cCultivoId").value;
+  const cultivoNombre=document.getElementById("cCultivoId").options[document.getElementById("cCultivoId").selectedIndex].text;
+  const fechaSiembra=document.getElementById("cFechaSiembra").value;
+  if (!parcelaId||!cultivoId||!fechaSiembra) { alert("Parcela, cultivo y fecha de siembra son requeridos"); return; }
+
+  const data={
+    parcela_id:parcelaId, cultivo_id:cultivoId, cultivo_nombre:cultivoNombre,
+    variedad:document.getElementById("cVariedad").value||null,
+    fecha_siembra:fechaSiembra,
+    fecha_cosecha_est:document.getElementById("cFechaCosecha").value||null,
+    area_ha:parseFloat(document.getElementById("cArea").value)||null,
+    semilla_kg:parseFloat(document.getElementById("cSemilla").value)||null,
+    presupuesto_total:parseFloat(document.getElementById("cPresupuesto").value)||null,
+    tipo_manejo:document.getElementById("cManejo").value,
+    objetivo:document.getElementById("cObjetivo").value,
+    notas:document.getElementById("cNotas").value||null,
+  };
+
+  const parcela=state.parcelas.find(p=>p.id===parcelaId);
+  if (DEMO_MODE) {
+    data.id="c"+Date.now(); data.estado="planificado"; data.parcela_nombre=parcela?.nombre||"—"; data.registros=0; data.costo_acumulado=0; data.costo_real_total=0; data.ingreso_total=0;
+    state.ciclos.push(data);
+  } else {
+    const saved=await apiCall("/ciclos",{method:"POST",body:JSON.stringify(data)});
+    state.ciclos.push(saved);
+  }
+  hideModal("modalCiclo");
+  renderCiclos();
+  renderDashboard();
+  populateCicloSelects();
+}
+
+// ── BITÁCORA ──────────────────────────────────────────────────
+
+async function loadBitacora() {
+  const cicloId=document.getElementById("filterCiclo").value;
+  const labor=document.getElementById("filterLabor").value;
+  if (!DEMO_MODE) {
+    const params=new URLSearchParams();
+    if (cicloId) params.set("ciclo_id", cicloId);
+    if (labor) params.set("labor", labor);
+    state.bitacora=await apiCall(`/bitacora?${params.toString()}`);
+  }
+  let bit=state.bitacora;
+  if (cicloId) bit=bit.filter(b=>b.ciclo_id===cicloId);
+  if (labor)   bit=bit.filter(b=>b.labor===labor);
+
+  const laborColors={riego:"#3b82f6",fumigacion:"#ef4444",fertilizacion:"#22c55e",deshierbe:"#f59e0b",cosecha:"#84cc16",otro:"#94a3b8"};
+  const totalCosto=bit.reduce((s,b)=>s+(parseFloat(b.insumo_costo||0)+parseFloat(b.costo_labor||0)+parseFloat(b.costo_mano_obra||0)),0);
+
+  if (cicloId) {
+    document.getElementById("bitacoraResumen").innerHTML=`
+      <div class="g4" style="margin-bottom:4px">
+        <div class="metric"><div class="metric-label">Registros</div><div class="metric-value" style="font-size:20px">${bit.length}</div></div>
+        <div class="metric"><div class="metric-label">Costo acumulado</div><div class="metric-value" style="font-size:16px;color:var(--amber)">$${totalCosto.toLocaleString("es-MX")}</div></div>
+        <div class="metric"><div class="metric-label">Fumigaciones</div><div class="metric-value" style="font-size:20px">${bit.filter(b=>b.labor==="fumigacion").length}</div></div>
+        <div class="metric"><div class="metric-label">Riegos</div><div class="metric-value" style="font-size:20px">${bit.filter(b=>b.labor==="riego").length}</div></div>
+      </div>`;
+  } else { document.getElementById("bitacoraResumen").innerHTML=""; }
+
+  document.getElementById("bitacoraList").innerHTML=bit.length?
+    bit.map(b=>`<div class="bit-item">
+      <div class="bit-date">${b.fecha}</div>
+      <div class="bit-dot" style="background:${laborColors[b.labor]||"#94a3b8"}"></div>
+      <div style="flex:1">
+        <div class="bit-labor">${b.labor.charAt(0).toUpperCase()+b.labor.slice(1)} ${b.temp_campo?`· ${b.temp_campo}°C`:""}</div>
+        <div class="bit-desc">${b.descripcion}</div>
+        ${b.insumo_nombre?`<div style="font-size:10px;color:var(--muted);margin-top:2px">${b.insumo_nombre} · ${b.insumo_cantidad||""} ${b.insumo_unidad||""}</div>`:""}
+        <div class="bit-cost">${(parseFloat(b.insumo_costo||0)+parseFloat(b.costo_labor||0)+parseFloat(b.costo_mano_obra||0))>0?"Costo: $"+( parseFloat(b.insumo_costo||0)+parseFloat(b.costo_labor||0)+parseFloat(b.costo_mano_obra||0)).toLocaleString("es-MX"):""}</div>
+      </div>
+    </div>`).join("")
+    :`<div class="empty"><div class="empty-icon">📓</div>${cicloId?"Sin actividades registradas":"Selecciona un ciclo para ver su bitácora"}</div>`;
+}
+
+async function guardarBitacora() {
+  const cicloId=document.getElementById("bCicloId").value;
+  const fecha=document.getElementById("bFecha").value;
+  const labor=document.getElementById("bLabor").value;
+  const desc=document.getElementById("bDesc").value.trim();
+  if (!cicloId||!fecha||!desc) { alert("Ciclo, fecha y descripción son requeridos"); return; }
+
+  const data={
+    ciclo_id:cicloId, fecha, labor, descripcion:desc,
+    insumo_nombre:document.getElementById("bInsumoNombre").value||null,
+    insumo_tipo:document.getElementById("bInsumoTipo").value||null,
+    insumo_cantidad:parseFloat(document.getElementById("bCantidad").value)||null,
+    insumo_unidad:document.getElementById("bUnidad").value,
+    insumo_costo:parseFloat(document.getElementById("bCostoInsumo").value)||0,
+    costo_mano_obra:parseFloat(document.getElementById("bCostoMO").value)||0,
+    temp_campo:parseFloat(document.getElementById("bTemp").value)||null,
+    observaciones:document.getElementById("bObs").value||null,
+  };
+
+  if (DEMO_MODE) { data.id="b"+Date.now(); state.bitacora.unshift(data); }
+  else { const saved=await apiCall("/bitacora",{method:"POST",body:JSON.stringify(data)}); state.bitacora.unshift(saved); }
+
+  hideModal("modalBitacora");
+  loadBitacora();
+  renderDashboard();
+}
+
+// ── FAUNA NOCIVA ──────────────────────────────────────────────
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+// ── MATERIAL VEGETAL ─────────────────────────────────────────
+
+const MATERIAL_LABELS = {
+  semilla:"Semilla", planta:"Planta", esqueje:"Esqueje", bulbo:"Bulbo", plantula:"Plántula"
+};
+
+const PROVEEDOR_LABELS = {
+  vivero:"Vivero",
+  casa_semillera:"Casa semillera",
+  productor_local:"Productor local",
+  cooperativa:"Cooperativa",
+  mercado_agricola:"Mercado agrícola",
+  en_linea:"En línea",
+  otro:"Otro"
+};
+
+function materialBadgeClass(value) {
+  if (value==="inmediata"||value==="activo") return "badge-ok";
+  if (value==="consultar"||value==="por_temporada"||value==="sobre_pedido") return "badge-warn";
+  if (value==="agotado"||value==="inactivo") return "badge-danger";
+  return "badge-neutral";
+}
+
+async function loadMaterial() {
+  const tipo=document.getElementById("filterMaterialTipo").value;
+  const cultivo=document.getElementById("filterMaterialCultivo").value;
+  if (!DEMO_MODE) {
+    const params=new URLSearchParams();
+    if (tipo) params.set("tipo", tipo);
+    if (cultivo) params.set("cultivo", cultivo);
+    state.material=await apiCall(`/material?${params.toString()}`);
+  }
+  renderMaterial();
+}
+
+function renderMaterial() {
+  let list=state.material||[];
+  const tipo=document.getElementById("filterMaterialTipo")?.value;
+  const cultivo=document.getElementById("filterMaterialCultivo")?.value;
+  if (tipo) list=list.filter(m=>m.tipo_material===tipo);
+  if (cultivo) list=list.filter(m=>m.cultivo_id===cultivo);
+
+  const proveedores=new Set(list.map(m=>m.proveedor_nombre)).size;
+  const disponibles=list.filter(m=>["inmediata","por_temporada","sobre_pedido","consultar"].includes(m.disponibilidad)).length;
+  const costos=list.flatMap(m=>[parseFloat(m.costo_min||0),parseFloat(m.costo_max||0)]).filter(n=>n>0);
+  const costoMin=costos.length?Math.min(...costos):0;
+  const costoMax=costos.length?Math.max(...costos):0;
+  document.getElementById("materialMetrics").innerHTML=`
+    <div class="g4">
+      <div class="metric"><div class="metric-label">Fuentes</div><div class="metric-value" style="font-size:20px">${list.length}</div><div class="metric-sub">registradas</div></div>
+      <div class="metric"><div class="metric-label">Proveedores</div><div class="metric-value" style="font-size:20px;color:var(--lime)">${proveedores}</div><div class="metric-sub">opciones de compra</div></div>
+      <div class="metric"><div class="metric-label">Disponibles</div><div class="metric-value" style="font-size:20px;color:var(--amber)">${disponibles}</div><div class="metric-sub">por confirmar</div></div>
+      <div class="metric"><div class="metric-label">Rango costos</div><div class="metric-value" style="font-size:16px;color:var(--blue)">$${costoMin.toLocaleString("es-MX")}–$${costoMax.toLocaleString("es-MX")}</div><div class="metric-sub">según unidad</div></div>
+    </div>`;
+
+  document.getElementById("materialList").innerHTML=list.length?
+    `<div class="table-wrap"><table><thead><tr><th>Cultivo</th><th>Material</th><th>Dónde conseguir</th><th>Costo aprox.</th><th>Disponibilidad</th><th></th></tr></thead><tbody>
+    ${list.map(m=>`<tr>
+      <td><div style="font-weight:700">${escapeHtml(m.cultivo_nombre)}</div><div style="font-size:10px;color:var(--muted)">${escapeHtml(m.variedad||"Sin variedad")}</div></td>
+      <td><span class="badge badge-info">${escapeHtml(MATERIAL_LABELS[m.tipo_material]||m.tipo_material)}</span><div style="font-size:10px;color:var(--muted);margin-top:3px">${escapeHtml(m.certificacion||"Calidad por validar")}</div></td>
+      <td><div style="font-weight:600">${escapeHtml(m.proveedor_nombre)}</div><div style="font-size:10px;color:var(--muted)">${escapeHtml(PROVEEDOR_LABELS[m.proveedor_tipo]||m.proveedor_tipo)} · ${escapeHtml(m.ubicacion||"Ubicación no registrada")}</div><div style="font-size:10px;color:var(--faint)">${escapeHtml(m.contacto||"Sin contacto")}</div></td>
+      <td><strong>$${parseFloat(m.costo_min||0).toLocaleString("es-MX")}–$${parseFloat(m.costo_max||0).toLocaleString("es-MX")}</strong><div style="font-size:10px;color:var(--muted)">por ${escapeHtml(m.unidad||"unidad")} · mín. ${escapeHtml(m.cantidad_minima||"—")}</div></td>
+      <td><span class="badge ${materialBadgeClass(m.disponibilidad)}">${escapeHtml((m.disponibilidad||"consultar").replace("_"," "))}</span><div style="font-size:10px;color:var(--muted);margin-top:4px">${escapeHtml(m.notas||"Sin notas")}</div></td>
+      <td style="text-align:right;white-space:nowrap">
+        ${m.disponibilidad!=="consultar"?`<button class="btn-sm" onclick="actualizarMaterialDisponibilidad('${m.id}','consultar')">Consultar</button>`:""}
+        ${m.disponibilidad!=="inmediata"?`<button class="btn-sm" onclick="actualizarMaterialDisponibilidad('${m.id}','inmediata')">Disponible</button>`:""}
+        <button class="btn-sm" onclick="eliminarMaterial('${m.id}')" style="color:#fca5a5;border-color:#7f1d1d55">Eliminar</button>
+      </td>
+    </tr>`).join("")}
+    </tbody></table></div>`
+    :`<div class="empty"><div class="empty-icon">🌿</div>Sin fuentes de semillas, plantas o esquejes</div>`;
+}
+
+async function guardarMaterial() {
+  const cultivoId=document.getElementById("mCultivoId").value || "otro";
+  const cultivoNombre=document.getElementById("mCultivoNombre").value.trim();
+  const proveedor=document.getElementById("mProveedor").value.trim();
+  if (!cultivoNombre||!proveedor) { alert("Cultivo y proveedor son requeridos"); return; }
+
+  const data={
+    cultivo_id:cultivoId,
+    cultivo_nombre:cultivoNombre,
+    tipo_material:document.getElementById("mTipoMaterial").value,
+    variedad:document.getElementById("mVariedad").value||null,
+    proveedor_nombre:proveedor,
+    proveedor_tipo:document.getElementById("mProveedorTipo").value,
+    ubicacion:document.getElementById("mUbicacion").value||null,
+    contacto:document.getElementById("mContacto").value||null,
+    costo_min:parseFloat(document.getElementById("mCostoMin").value)||0,
+    costo_max:parseFloat(document.getElementById("mCostoMax").value)||parseFloat(document.getElementById("mCostoMin").value)||0,
+    unidad:document.getElementById("mUnidad").value,
+    cantidad_minima:document.getElementById("mCantidadMinima").value||null,
+    disponibilidad:document.getElementById("mDisponibilidad").value,
+    certificacion:document.getElementById("mCertificacion").value||null,
+    estado:"activo",
+    notas:document.getElementById("mNotas").value||null,
+  };
+
+  if (DEMO_MODE) {
+    data.id="m"+Date.now();
+    state.material.unshift(data);
+  } else {
+    const saved=await apiCall("/material",{method:"POST",body:JSON.stringify(data)});
+    state.material.unshift(saved);
+  }
+  hideModal("modalMaterial");
+  renderMaterial();
+  populateCicloSelects();
+}
+
+async function actualizarMaterialDisponibilidad(id, disponibilidad) {
+  const item=state.material.find(m=>m.id===id);
+  if (!item) return;
+  item.disponibilidad=disponibilidad;
+  if (!DEMO_MODE) await apiCall(`/material/${id}`,{method:"PATCH",body:JSON.stringify({disponibilidad})});
+  renderMaterial();
+}
+
+async function eliminarMaterial(id) {
+  if (!confirm("¿Eliminar esta fuente de material vegetal?")) return;
+  state.material=state.material.filter(m=>m.id!==id);
+  if (!DEMO_MODE) await apiCall(`/material/${id}`,{method:"DELETE"});
+  renderMaterial();
+  populateCicloSelects();
+}
+
+const FAUNA_LABELS = {
+  roedores:"Roedores", tuza:"Tuza", raton:"Ratón", ardilla:"Ardilla", pajaros:"Pájaros", conejo:"Conejo", otro:"Otro"
+};
+
+const FAUNA_METHODS = {
+  trampas:"Trampas mecánicas",
+  barreras:"Barreras físicas / malla",
+  manejo_habitat:"Manejo de hábitat y limpieza",
+  repelente:"Repelente autorizado",
+  ahuyentador:"Ahuyentador visual o sonoro",
+  control_profesional:"Control profesional",
+  monitoreo:"Solo monitoreo"
+};
+
+function faunaBadgeClass(value) {
+  if (value==="critica"||value==="alta"||value==="detectado") return "badge-danger";
+  if (value==="media"||value==="en_control") return "badge-warn";
+  if (value==="controlado"||value==="eliminado"||value==="baja") return "badge-ok";
+  return "badge-neutral";
+}
+
+async function loadFauna() {
+  const parcelaId=document.getElementById("filterFaunaParcela").value;
+  const estado=document.getElementById("filterFaunaEstado").value;
+  if (!DEMO_MODE) {
+    const params=new URLSearchParams();
+    if (parcelaId) params.set("parcela_id", parcelaId);
+    if (estado) params.set("estado", estado);
+    state.fauna=await apiCall(`/fauna?${params.toString()}`);
+  }
+  renderFauna();
+}
+
+function renderFauna() {
+  let list=state.fauna||[];
+  const parcelaId=document.getElementById("filterFaunaParcela")?.value;
+  const estado=document.getElementById("filterFaunaEstado")?.value;
+  if (parcelaId) list=list.filter(f=>f.parcela_id===parcelaId);
+  if (estado) list=list.filter(f=>f.estado===estado);
+
+  const activas=list.filter(f=>!["controlado","eliminado"].includes(f.estado)).length;
+  const criticas=list.filter(f=>["alta","critica"].includes(f.severidad)).length;
+  const costo=list.reduce((s,f)=>s+parseFloat(f.costo_control||0),0);
+  document.getElementById("faunaMetrics").innerHTML=`
+    <div class="g4">
+      <div class="metric"><div class="metric-label">Incidencias</div><div class="metric-value" style="font-size:20px">${list.length}</div><div class="metric-sub">registradas</div></div>
+      <div class="metric"><div class="metric-label">Activas</div><div class="metric-value" style="font-size:20px;color:var(--amber)">${activas}</div><div class="metric-sub">requieren seguimiento</div></div>
+      <div class="metric"><div class="metric-label">Alta severidad</div><div class="metric-value" style="font-size:20px;color:var(--red)">${criticas}</div><div class="metric-sub">prioridad campo</div></div>
+      <div class="metric"><div class="metric-label">Costo control</div><div class="metric-value" style="font-size:16px;color:var(--blue)">$${costo.toLocaleString("es-MX")}</div><div class="metric-sub">acumulado</div></div>
+    </div>`;
+
+  document.getElementById("faunaList").innerHTML=list.length?
+    list.map(f=>`<div class="card ${["alta","critica"].includes(f.severidad)?"danger":f.estado==="en_control"?"warn":""}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <div>
+          <div style="font-size:14px;font-weight:700">${escapeHtml(FAUNA_LABELS[f.especie]||f.especie)}</div>
+          <div style="font-size:11px;color:var(--muted)">${escapeHtml(f.parcela_nombre||"Sin parcela")} · ${escapeHtml(f.fecha||"—")} · ${escapeHtml(f.ubicacion||"Sin zona")}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge ${faunaBadgeClass(f.severidad)}">${escapeHtml(f.severidad||"media")}</span>
+          <span class="badge ${faunaBadgeClass(f.estado)}">${escapeHtml((f.estado||"detectado").replace("_"," "))}</span>
+        </div>
+      </div>
+      <div class="g3" style="gap:8px;margin-bottom:8px">
+        <div style="font-size:11px"><span style="color:var(--muted)">Evidencia</span><br><strong>${escapeHtml(f.evidencia||"—")}</strong></div>
+        <div style="font-size:11px"><span style="color:var(--muted)">Daño</span><br><strong>${escapeHtml(f.dano_estimado||"—")}</strong></div>
+        <div style="font-size:11px"><span style="color:var(--muted)">Control</span><br><strong>${escapeHtml(FAUNA_METHODS[f.metodo_control]||f.metodo_control||"—")}</strong></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${escapeHtml(f.notas||f.resultado||"Sin notas de seguimiento")}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="font-size:11px">Responsable: <strong>${escapeHtml(f.responsable||"—")}</strong> · Costo: <strong>$${parseFloat(f.costo_control||0).toLocaleString("es-MX")}</strong></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${f.estado!=="en_control"?`<button class="btn-sm" onclick="actualizarFaunaEstado('${f.id}','en_control')">En control</button>`:""}
+          ${f.estado!=="controlado"?`<button class="btn-sm" onclick="actualizarFaunaEstado('${f.id}','controlado')">Controlado</button>`:""}
+          ${f.estado!=="eliminado"?`<button class="btn-sm" onclick="actualizarFaunaEstado('${f.id}','eliminado')">Eliminado</button>`:""}
+          <button class="btn-sm" onclick="eliminarFauna('${f.id}')" style="color:#fca5a5;border-color:#7f1d1d55">Eliminar</button>
+        </div>
+      </div>
+    </div>`).join("")
+    :`<div class="empty"><div class="empty-icon">🛡</div>Sin incidencias de fauna nociva</div>`;
+}
+
+async function guardarFauna() {
+  const parcelaId=document.getElementById("fParcelaId").value;
+  const fecha=document.getElementById("fFecha").value;
+  if (!parcelaId||!fecha) { alert("Parcela y fecha son requeridas"); return; }
+
+  const data={
+    parcela_id:parcelaId,
+    especie:document.getElementById("fEspecie").value,
+    severidad:document.getElementById("fSeveridad").value,
+    fecha,
+    ubicacion:document.getElementById("fUbicacion").value||null,
+    evidencia:document.getElementById("fEvidencia").value||null,
+    dano_estimado:document.getElementById("fDano").value||null,
+    metodo_control:document.getElementById("fMetodo").value,
+    responsable:document.getElementById("fResponsable").value||null,
+    costo_control:parseFloat(document.getElementById("fCosto").value)||0,
+    estado:document.getElementById("fEstado").value,
+    resultado:document.getElementById("fResultado").value||null,
+    notas:document.getElementById("fNotas").value||null,
+  };
+
+  const parcela=state.parcelas.find(p=>p.id===parcelaId);
+  if (DEMO_MODE) {
+    data.id="f"+Date.now(); data.parcela_nombre=parcela?.nombre||"Sin parcela";
+    state.fauna.unshift(data);
+  } else {
+    const saved=await apiCall("/fauna",{method:"POST",body:JSON.stringify(data)});
+    state.fauna.unshift(saved);
+  }
+  hideModal("modalFauna");
+  renderFauna();
+}
+
+async function actualizarFaunaEstado(id, estado) {
+  const item=state.fauna.find(f=>f.id===id);
+  if (!item) return;
+  item.estado=estado;
+  item.resultado=estado==="eliminado"?"Incidencia eliminada":estado==="controlado"?"Daño detenido":"Seguimiento activo";
+  if (!DEMO_MODE) await apiCall(`/fauna/${id}`,{method:"PATCH",body:JSON.stringify({estado:item.estado,resultado:item.resultado})});
+  renderFauna();
+}
+
+async function eliminarFauna(id) {
+  if (!confirm("¿Eliminar este registro de fauna nociva?")) return;
+  state.fauna=state.fauna.filter(f=>f.id!==id);
+  if (!DEMO_MODE) await apiCall(`/fauna/${id}`,{method:"DELETE"});
+  renderFauna();
+}
+
+// ── FLUJO DE CAJA ─────────────────────────────────────────────
+
+async function loadFlujo() {
+  const cicloId=document.getElementById("flujoCicloSel").value;
+  if (!cicloId) {
+    state.flujo=[];
+    document.getElementById("flujoMetrics").innerHTML="";
+    document.getElementById("flujoChart").innerHTML=emptyHtml("💰","Selecciona un ciclo para ver el flujo de caja");
+    document.getElementById("flujoTable").innerHTML="";
+    return;
+  }
+
+  document.getElementById("flujoMetrics").innerHTML="";
+  document.getElementById("flujoChart").innerHTML=emptyHtml("💰","Cargando flujo de caja...");
+  document.getElementById("flujoTable").innerHTML="";
+
+  try {
+    if (!DEMO_MODE) {
+      state.flujo=await apiCall(`/flujo?ciclo_id=${encodeURIComponent(cicloId)}`);
+    }
+  } catch (error) {
+    document.getElementById("flujoChart").innerHTML=emptyHtml("⚠",error.message||"No se pudo cargar el flujo de caja");
+    return;
+  }
+  const flujo=DEMO_MODE&&cicloId?state.flujo:state.flujo.filter(f=>f.ciclo_id===cicloId);
+  const datos=DEMO_MODE?state.flujo:flujo;
+  if (!datos.length) {
+    document.getElementById("flujoMetrics").innerHTML="";
+    document.getElementById("flujoChart").innerHTML=emptyHtml("💰","Este ciclo todavía no tiene flujo de caja proyectado");
+    document.getElementById("flujoTable").innerHTML="";
+    return;
+  }
+
+  const totalEgrProy=datos.reduce((s,f)=>s+parseFloat(f.egreso_proj||0),0);
+  const totalIngProy=datos.reduce((s,f)=>s+parseFloat(f.ingreso_proj||0),0);
+  const totalEgrReal=datos.reduce((s,f)=>s+parseFloat(f.egreso_real||0),0);
+  const totalIngReal=datos.reduce((s,f)=>s+parseFloat(f.ingreso_real||0),0);
+
+  document.getElementById("flujoMetrics").innerHTML=`
+    <div class="g4">
+      <div class="metric"><div class="metric-label">Egresos proyectados</div><div class="metric-value" style="color:var(--red);font-size:16px">$${totalEgrProy.toLocaleString("es-MX")}</div></div>
+      <div class="metric"><div class="metric-label">Ingresos proyectados</div><div class="metric-value" style="color:var(--lime);font-size:16px">$${totalIngProy.toLocaleString("es-MX")}</div></div>
+      <div class="metric"><div class="metric-label">Egresos reales</div><div class="metric-value" style="color:var(--red);font-size:16px">$${totalEgrReal.toLocaleString("es-MX")}</div></div>
+      <div class="metric"><div class="metric-label">Utilidad proyectada</div><div class="metric-value" style="color:${totalIngProy-totalEgrProy>0?"var(--lime)":"var(--red)"};font-size:16px">$${(totalIngProy-totalEgrProy).toLocaleString("es-MX")}</div></div>
+    </div>`;
+
+  const maxVal=Math.max(...datos.map(f=>Math.max(parseFloat(f.egreso_proj||0),parseFloat(f.ingreso_proj||0))),1);
+  const MESES_N=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+  document.getElementById("flujoChart").innerHTML=`
+    <div class="card">
+      <div class="card-title">Flujo mensual proyectado <span style="font-size:10px;color:var(--muted)">Barras: rojo=egreso · verde=ingreso</span></div>
+      ${datos.map(f=>{
+        const egr=parseFloat(f.egreso_proj||0); const ing=parseFloat(f.ingreso_proj||0);
+        const saldo=ing-egr; const egrW=Math.round(egr/maxVal*100); const ingW=Math.round(ing/maxVal*100);
+        return `<div class="flujo-bar">
+          <span class="flujo-mes">${MESES_N[(f.mes-1)%12]} ${f.anio}</span>
+          <div class="flujo-track">
+            <div class="flujo-egr" style="width:${egrW}%"></div>
+            <div class="flujo-ing" style="width:${ingW}%;opacity:.7"></div>
+          </div>
+          <div class="flujo-nums">
+            <span class="e">-$${egr.toLocaleString("es-MX")}</span>
+            ${ing>0?`<span class="i">+$${ing.toLocaleString("es-MX")}</span>`:""}
+          </div>
+	          <span class="flujo-saldo" style="color:${saldo>=0?"#4ade80":"#fca5a5"}">$${saldo.toLocaleString("es-MX")}</span>
+	        </div>`;
+	      }).join("")}
+	    </div>`;
+
+  document.getElementById("flujoTable").innerHTML=`
+    <div class="card">
+      <div class="card-title">Detalle mensual</div>
+      <div class="table-wrap"><table><thead><tr><th>Mes</th><th>Egreso proy.</th><th>Ingreso proy.</th><th>Egreso real</th><th>Ingreso real</th><th>Saldo real</th></tr></thead><tbody>
+      ${datos.map(f=>`<tr>
+        <td>${MESES_N[(Number(f.mes)-1+12)%12]} ${escapeHtml(f.anio)}</td>
+        <td>$${parseFloat(f.egreso_proj||0).toLocaleString("es-MX")}</td>
+        <td>$${parseFloat(f.ingreso_proj||0).toLocaleString("es-MX")}</td>
+        <td>$${parseFloat(f.egreso_real||0).toLocaleString("es-MX")}</td>
+        <td>$${parseFloat(f.ingreso_real||0).toLocaleString("es-MX")}</td>
+        <td>$${parseFloat(f.saldo_real ?? (Number(f.ingreso_real||0)-Number(f.egreso_real||0))).toLocaleString("es-MX")}</td>
+      </tr>`).join("")}
+      </tbody></table></div>
+    </div>`;
+}
+
+// ── ALERTAS ───────────────────────────────────────────────────
+
+function renderAlerta(a) {
+  const icons={helada:"❄",sequia:"🌵",lluvia_excesiva:"🌧",plaga:"🦗",mercado:"📈",bioinsumo:"🌿"};
+  return `<div class="alerta-item ${a.nivel}" onclick="marcarLeida('${a.id}')">
+    <span class="alerta-icon">${icons[a.tipo]||"ℹ"}</span>
+    <div style="flex:1">
+      <div class="alerta-title">${a.titulo}</div>
+      <div class="alerta-msg">${a.mensaje}</div>
+      ${a.accion?`<div style="font-size:10px;color:var(--lime);margin-top:4px">→ ${a.accion}</div>`:""}
+      <div class="alerta-time">${new Date(a.creado_en).toLocaleString("es-MX")}</div>
+    </div>
+    ${!a.leida?`<div style="width:7px;height:7px;background:var(--lime);border-radius:50%;flex-shrink:0;margin-top:4px"></div>`:""}
+  </div>`;
+}
+
+function renderAlertas() {
+  document.getElementById("alertasList").innerHTML=state.alertas.length?
+    state.alertas.map(renderAlerta).join("")
+    :`<div class="empty"><div class="empty-icon">🔔</div>Sin alertas pendientes</div>`;
+}
+
+function marcarLeida(id) {
+  const a=state.alertas.find(x=>x.id===id);
+  if (a) { a.leida=true; renderAlertas(); renderDashboard(); }
+  if (!DEMO_MODE) apiCall(`/alertas/${id}/leer`,{method:"PATCH"});
+}
+
+function marcarTodasLeidas() {
+  state.alertas.forEach(a=>a.leida=true);
+  document.getElementById("alertDot").style.display="none";
+  renderAlertas(); renderDashboard();
+  if (!DEMO_MODE) apiCall("/alertas/leer-todas",{method:"PATCH"});
+}
+
+// ── SELECTS ───────────────────────────────────────────────────
+
+function populateCicloSelects() {
+  const opts=state.ciclos.map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.cultivo_nombre||"Cultivo")} — ${escapeHtml(c.parcela_nombre||"Sin parcela")}</option>`).join("");
+  const parOpts=state.parcelas.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.nombre)}</option>`).join("");
+  const cultivosMap=new Map();
+  state.ciclos.forEach(c=>cultivosMap.set(c.cultivo_id, c.cultivo_nombre));
+  state.material.forEach(m=>cultivosMap.set(m.cultivo_id, m.cultivo_nombre));
+  const cultivoOpts=[...cultivosMap.entries()].map(([id,nombre])=>`<option value="${escapeHtml(id)}">${escapeHtml(nombre)}</option>`).join("");
+  document.getElementById("filterCiclo").innerHTML=`<option value="">Todos los ciclos</option>${opts}`;
+  document.getElementById("bCicloId").innerHTML=`<option value="">Selecciona ciclo...</option>${opts}`;
+  document.getElementById("flujoCicloSel").innerHTML=`<option value="">Selecciona ciclo...</option>${opts}`;
+  document.getElementById("cParcelaId").innerHTML=`<option value="">Selecciona parcela...</option>${parOpts}`;
+  document.getElementById("fParcelaId").innerHTML=`<option value="">Selecciona parcela...</option>${parOpts}`;
+  document.getElementById("filterFaunaParcela").innerHTML=`<option value="">Todas las parcelas</option>${parOpts}`;
+  document.getElementById("filterMaterialCultivo").innerHTML=`<option value="">Todos los cultivos</option>${cultivoOpts}`;
+}
+
+// ── AUTO-FECHA ────────────────────────────────────────────────
+document.getElementById("bFecha").valueAsDate=new Date();
+document.getElementById("fFecha").valueAsDate=new Date();
+document.getElementById("pLat").addEventListener("blur", () => {
+  const lat=parseFloat(document.getElementById("pLat").value);
+  const lng=parseFloat(document.getElementById("pLng").value);
+  if (lat&&lng&&!DEMO_MODE) {
+    fetch(`https://geocoding-api.open-meteo.com/v1/search?latitude=${lat}&longitude=${lng}&count=1&language=es&format=json`)
+      .then(r=>r.json()).catch(()=>{});
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+if (authToken&&currentUser) {
+  if (DEMO_MODE || authToken === "demo-token") loginDemo();
+  else initApp();
+} else {
+  document.getElementById("authScreen").style.display="flex";
+}
+</script>
+</body>
+</html>

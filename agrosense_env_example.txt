@@ -1,0 +1,31 @@
+# Base de datos PostgreSQL
+DATABASE_URL=postgresql://user:password@localhost:5432/agrosense
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=agrosense
+DB_USER=agrosense_user
+DB_PASSWORD=your_secure_password
+
+# JWT Auth
+JWT_SECRET=your_256_bit_secret_key_here
+JWT_EXPIRES_IN=7d
+REFRESH_TOKEN_EXPIRES_IN=30d
+
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+
+# App
+PORT=3000
+NODE_ENV=development
+FRONTEND_URL=https://agrosense.cyberbotlabs.io
+
+# Email (alertas)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=noreply@cyberbotlabs.io
+SMTP_PASS=your_app_password
+
+# Rate limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_FREE=50
+RATE_LIMIT_MAX_PRO=500
