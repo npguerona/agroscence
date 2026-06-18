@@ -501,10 +501,9 @@ const PROGRESS_STEPS = [
 let progressRoot=null;
 let progressSteps=PROGRESS_STEPS.map(step=>({...step,status:"pending"}));
 
-const RAILWAY_URL = "https://agroscence-production.up.railway.app";
-const API_BASE = (window.location.hostname === "localhost" || window.location.protocol === "file:")
-  ? ""
-  : RAILWAY_URL;
+const API_BASE = window.location.protocol === "file:"
+  ? "http://localhost:3000"
+  : window.location.origin;
 const APIS = {
   geocoding: "https://geocoding-api.open-meteo.com/v1/search",
   forecast:  "https://api.open-meteo.com/v1/forecast",
