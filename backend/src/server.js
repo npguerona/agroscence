@@ -33,10 +33,11 @@ app.use(express.static(path.join(PROJECT_ROOT, "frontend")));
 const nowIso = () => new Date().toISOString();
 const ok   = (res, data)         => res.json({ ok: true, data });
 const fail = (res, status, error) => res.status(status).json({ ok: false, error });
+const asyncHandler = handler => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
 // ─── Auth middleware ──────────────────────────────────────────────────────────
 
-async function auth(req, res, next) {
+const auth = asyncHandler(async (req, res, next) => {
   const header = req.headers.authorization || "";
   const token  = header.startsWith("Bearer ") ? header.slice(7) : "";
   if (!token) return fail(res, 401, "Token requerido");
@@ -49,7 +50,7 @@ async function auth(req, res, next) {
   } catch {
     return fail(res, 401, "Sesión inválida o expirada");
   }
-}
+});
 
 // ─── Decorators ──────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ async function decorateParcelas(userId) {
 async function decorateCiclos(userId) {
   const [lista, todasParcelas] = await Promise.all([
     db.ciclos.list(userId),
-    db.parcelas.list(userId)
+    db.parcelas.list(userId, { includeInactive: true })
   ]);
   return await Promise.all(lista.map(async c => {
     const parcela   = todasParcelas.find(p => p.id === c.parcela_id);
@@ -127,7 +128,7 @@ app.post("/api/v2/analysis/zone", async (req, res) => {
 });
 
 // Auth
-app.post("/api/v2/auth/register", async (req, res) => {
+app.post("/api/v2/auth/register", asyncHandler(async (req, res) => {
   const { nombre, email, password, estado_mx } = req.body;
   if (!nombre || !email || !password) return fail(res, 400, "Nombre, email y contraseña son requeridos");
   if (password.length < 8) return fail(res, 400, "La contraseña debe tener al menos 8 caracteres");
@@ -136,28 +137,61 @@ app.post("/api/v2/auth/register", async (req, res) => {
   const user = { id: nanoid(), email: normalizedEmail, password_hash: await bcrypt.hash(password, 10), nombre: String(nombre).trim(), estado_mx: estado_mx || null, plan: "free", creado_en: nowIso(), actualizado_en: nowIso() };
   await db.users.create(user);
   ok(res, { accessToken: signUser(user), user: publicUser(user) });
-});
+}));
 
-app.post("/api/v2/auth/login", async (req, res) => {
+app.post("/api/v2/auth/login", asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const user = await db.users.findByEmail(String(email || "").trim().toLowerCase());
   if (!user || !(await bcrypt.compare(password || "", user.password_hash))) return fail(res, 401, "Email o contraseña incorrectos");
   await db.users.update(user.id, { ultimo_login: nowIso() });
   ok(res, { accessToken: signUser(user), user: publicUser(user) });
-});
+}));
 
 // Parcelas
 app.get("/api/v2/parcelas", auth, async (req, res) => {
   try { ok(res, await decorateParcelas(req.user.id)); } catch(e) { fail(res, 500, e.message); }
 });
 
-app.post("/api/v2/parcelas", auth, async (req, res) => {
+app.post("/api/v2/parcelas", auth, asyncHandler(async (req, res) => {
   const { nombre, lat, lng } = req.body;
   if (!nombre || lat === undefined || lng === undefined) return fail(res, 400, "Nombre, latitud y longitud son requeridos");
-  const parcela = { id: nanoid(), user_id: req.user.id, nombre: String(nombre).trim(), lat: Number(lat), lng: Number(lng), altitud_m: req.body.altitud_m ?? null, area_ha: req.body.area_ha ?? null, municipio: req.body.municipio || null, estado: req.body.estado || req.user.estado_mx || null, activa: true, creado_en: nowIso(), actualizado_en: nowIso() };
+  const parsedLat = Number(lat), parsedLng = Number(lng);
+  if (!Number.isFinite(parsedLat) || parsedLat < -90 || parsedLat > 90 || !Number.isFinite(parsedLng) || parsedLng < -180 || parsedLng > 180) return fail(res, 400, "Coordenadas inválidas");
+  const parcela = { id: nanoid(), user_id: req.user.id, nombre: String(nombre).trim(), lat: parsedLat, lng: parsedLng, altitud_m: req.body.altitud_m ?? null, area_ha: req.body.area_ha ?? null, municipio: req.body.municipio || null, estado: req.body.estado || req.user.estado_mx || null, activa: true, creado_en: nowIso(), actualizado_en: nowIso() };
   await db.parcelas.create(parcela);
   ok(res, { ...parcela, ciclos_activos: 0, ciclos_total: 0 });
-});
+}));
+
+app.patch("/api/v2/parcelas/:id", auth, asyncHandler(async (req, res) => {
+  const allowed = ["nombre","lat","lng","altitud_m","area_ha","municipio","estado"];
+  const data = Object.fromEntries(allowed.filter(key => Object.hasOwn(req.body, key)).map(key => [key, req.body[key]]));
+  if (!Object.keys(data).length) return fail(res, 400, "No hay campos válidos para actualizar");
+  if (Object.hasOwn(data, "nombre")) {
+    data.nombre = String(data.nombre || "").trim();
+    if (!data.nombre) return fail(res, 400, "El nombre de la parcela es requerido");
+  }
+  for (const key of ["lat","lng","altitud_m","area_ha"]) {
+    if (!Object.hasOwn(data, key)) continue;
+    if (data[key] === null || data[key] === "") { data[key] = null; continue; }
+    data[key] = Number(data[key]);
+    if (!Number.isFinite(data[key])) return fail(res, 400, `${key} debe ser numérico`);
+  }
+  if (data.lat !== undefined && data.lat !== null && (data.lat < -90 || data.lat > 90)) return fail(res, 400, "Latitud fuera de rango");
+  if (data.lng !== undefined && data.lng !== null && (data.lng < -180 || data.lng > 180)) return fail(res, 400, "Longitud fuera de rango");
+  if (data.area_ha !== undefined && data.area_ha !== null && data.area_ha < 0) return fail(res, 400, "El área no puede ser negativa");
+  for (const key of ["municipio","estado"]) if (Object.hasOwn(data, key)) data[key] = String(data[key] || "").trim() || null;
+  const updated = await db.parcelas.update(req.params.id, req.user.id, data);
+  if (!updated) return fail(res, 404, "Parcela no encontrada");
+  const decorated = await decorateParcelas(req.user.id);
+  ok(res, decorated.find(parcela => parcela.id === updated.id) || updated);
+}));
+
+app.delete("/api/v2/parcelas/:id", auth, asyncHandler(async (req, res) => {
+  const parcela = await db.parcelas.findOne(req.params.id, req.user.id);
+  if (!parcela || parcela.activa === false) return fail(res, 404, "Parcela no encontrada");
+  await db.parcelas.archive(req.params.id, req.user.id);
+  ok(res, { archived: true });
+}));
 
 // Ciclos
 app.get("/api/v2/ciclos", auth, async (req, res) => {
@@ -272,5 +306,10 @@ app.patch("/api/v2/alertas/leer-todas", auth, async (req, res) => {
 
 // Fallback SPA
 app.get("*", (_req, res) => res.sendFile(path.join(PROJECT_ROOT, "frontend", "agrosense_saas.html")));
+
+app.use((error, _req, res, _next) => {
+  console.error(error);
+  if (!res.headersSent) fail(res, 500, error.message || "Error interno del servidor");
+});
 
 app.listen(PORT, () => console.log(`AgroSense listo en http://localhost:${PORT}`));

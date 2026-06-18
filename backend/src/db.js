@@ -14,7 +14,9 @@ import { createClient } from "@supabase/supabase-js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
-const DATA_FILE  = path.resolve(__dirname, "../../data/local-db.json");
+const DATA_FILE  = process.env.AGROSENSE_DATA_FILE
+  ? path.resolve(process.env.AGROSENSE_DATA_FILE)
+  : path.resolve(__dirname, "../../data/local-db.json");
 
 // ── Supabase client (sólo si hay credenciales) ────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -126,12 +128,14 @@ const users = {
 // PARCELAS
 // ================================================================
 const parcelas = {
-  async list(userId) {
+  async list(userId, { includeInactive = false } = {}) {
     if (supabase) {
-      return await sq(supabase.from("parcelas").select("*").eq("user_id", userId).eq("activa", true));
+      let query = supabase.from("parcelas").select("*").eq("user_id", userId);
+      if (!includeInactive) query = query.eq("activa", true);
+      return await sq(query);
     }
     const db = await readLocal();
-    return db.parcelas.filter(p => p.user_id === userId && p.activa !== false);
+    return db.parcelas.filter(p => p.user_id === userId && (includeInactive || p.activa !== false));
   },
 
   async create(parcela) {
@@ -152,6 +156,24 @@ const parcelas = {
     }
     const db = await readLocal();
     return db.parcelas.find(p => p.id === id && p.user_id === userId) || null;
+  },
+
+  async update(id, userId, data) {
+    const changes = { ...data, actualizado_en: new Date().toISOString() };
+    if (supabase) {
+      const rows = await sq(supabase.from("parcelas").update(changes).eq("id", id).eq("user_id", userId).select());
+      return rows[0] || null;
+    }
+    const db = await readLocal();
+    const item = db.parcelas.find(p => p.id === id && p.user_id === userId);
+    if (!item) return null;
+    Object.assign(item, changes);
+    await writeLocal(db);
+    return item;
+  },
+
+  async archive(id, userId) {
+    return await this.update(id, userId, { activa: false });
   }
 };
 
