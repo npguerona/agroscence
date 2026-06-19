@@ -33,13 +33,11 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
 .gps-chip{cursor:pointer;background:#1e3a5f22;color:#93c5fd;border-color:#1d4ed866}
 .gps-chip.live{color:#bfdbfe;border-color:#3b82f6;background:#1d4ed833}
 
-	.main{display:grid;grid-template-columns:60% 1fr;gap:0;height:calc(100vh - 57px)}
-	.main.results-open{grid-template-columns:60% 1fr}
-	@media(max-width:800px){.main,.main.results-open{grid-template-columns:1fr;height:auto}}
+	.main{display:block;height:calc(100vh - 57px)}
+	@media(max-width:800px){.main{height:auto;min-height:calc(100vh - 57px)}}
 
 /* PANEL IZQUIERDO */
-	.left-panel{display:flex;flex-direction:column;overflow:hidden}
-	.main.results-open .left-panel{border-right:1px solid var(--border)}
+	.left-panel{display:flex;flex-direction:column;overflow:hidden;height:100%}
 .search-area{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--bg2)}
 .search-row{display:flex;gap:6px;margin-bottom:10px}
 .search-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:9px 12px;font-size:13px;font-family:var(--font)}
@@ -116,15 +114,13 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
 .zchip{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
 .zchip strong{color:var(--lime)}
 
-/* PANEL DERECHO */
-	.right-panel{display:block;overflow-y:auto;background:var(--bg);border-left:1px solid var(--border)}
-.right-panel::-webkit-scrollbar{width:4px}
-.right-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+/* RESULTADOS DEBAJO DEL MAPA */
+	.right-panel{display:block;background:var(--bg);border-top:1px solid var(--border)}
 
 /* ESTADO INICIAL */
-.idle-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;color:var(--muted)}
-.idle-icon{font-size:48px;margin-bottom:16px;opacity:.5}
-.idle-title{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--white)}
+.idle-state{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);color:var(--muted)}
+.idle-icon{font-size:24px;opacity:.65;flex-shrink:0}
+.idle-title{font-size:13px;font-weight:700;margin-bottom:2px;color:var(--white)}
 
 /* LOADING */
 	.loading-panel{padding:32px;text-align:center}
@@ -296,6 +292,11 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
       </div>
     </div>
 
+    <div class="idle-state" id="idleState">
+      <div class="idle-icon">🛰</div>
+      <div><div class="idle-title">Selecciona una zona para analizar</div><div style="font-size:11px;line-height:1.45">Haz clic en el mapa o busca un municipio. El sistema consultará datos reales de clima, suelo y mercado.</div></div>
+    </div>
+
     <div id="map"></div>
 
     <div class="measurement-panel" id="measurementPanel">
@@ -321,6 +322,23 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
       <button class="btn btn-primary" id="btnAnalyze" onclick="runAnalysis()" disabled style="width:100%;justify-content:center;padding:11px">
         Analizar zona con datos reales →
       </button>
+    </div>
+
+    <div class="right-panel" id="rightPanel">
+      <div id="loadingPanel" style="display:none" class="loading-panel">
+        <div class="spin"></div>
+        <div style="font-size:13px;font-weight:600">Consultando APIs en tiempo real...</div>
+        <div id="reactProgressWidget"></div>
+      </div>
+      <div id="resultsPanel" style="display:none">
+        <div class="results" id="resultsContent"></div>
+        <div class="export-bar">
+          <button class="btn-export" onclick="openSaveModal()" style="background:var(--lime2)">💾 Guardar parcela</button>
+          <button class="btn-export" onclick="exportPDF()">⬇ PDF</button>
+          <button class="btn-json" onclick="exportJSON()">{ } JSON</button>
+          <span style="font-size:10px;color:var(--faint);margin-left:auto" id="generadoEn"></span>
+        </div>
+      </div>
     </div>
     </section>
 
@@ -398,28 +416,6 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
     </section>
   </div>
 
-  <!-- PANEL DERECHO: RESULTADOS -->
-  <div class="right-panel" id="rightPanel">
-    <div class="idle-state" id="idleState">
-      <div class="idle-icon">🛰</div>
-      <div class="idle-title">Selecciona una zona para analizar</div>
-      <div style="font-size:13px;max-width:300px;line-height:1.6">Haz clic en el mapa o busca un municipio. El sistema consultará datos reales de clima, suelo y mercado en tiempo real.</div>
-    </div>
-    <div id="loadingPanel" style="display:none" class="loading-panel">
-      <div class="spin"></div>
-      <div style="font-size:13px;font-weight:600">Consultando APIs en tiempo real...</div>
-      <div id="reactProgressWidget"></div>
-    </div>
-    <div id="resultsPanel" style="display:none">
-      <div class="results" id="resultsContent"></div>
-      <div class="export-bar">
-        <button class="btn-export" onclick="openSaveModal()" style="background:var(--lime2)">💾 Guardar parcela</button>
-        <button class="btn-export" onclick="exportPDF()">⬇ PDF</button>
-        <button class="btn-json" onclick="exportJSON()">{ } JSON</button>
-        <span style="font-size:10px;color:var(--faint);margin-left:auto" id="generadoEn"></span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <div class="detail-modal" id="detailModal" onclick="if(event.target===this)closeRecordDetail()"><div class="detail-card" id="detailCard"></div></div>
