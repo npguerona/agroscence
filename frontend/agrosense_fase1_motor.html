@@ -511,8 +511,9 @@ const PROGRESS_STEPS = [
 let progressRoot=null;
 let progressSteps=PROGRESS_STEPS.map(step=>({...step,status:"pending"}));
 
+const PUBLIC_API_ORIGIN = "https://agroscence.cyberbotlabs.io";
 const API_BASE = window.location.protocol === "file:"
-  ? "http://localhost:3000"
+  ? PUBLIC_API_ORIGIN
   : window.location.origin;
 const APIS = {
   geocoding: "https://geocoding-api.open-meteo.com/v1/search",
@@ -657,6 +658,12 @@ function initMap(){
   labelsLayer=L.tileLayer("https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{attribution:"Labels © Esri",maxZoom:19});
   L.control.layers({"Mapa":streetLayer,"Satélite":satelliteLayer},{"Etiquetas":labelsLayer},{position:"topright",collapsed:true}).addTo(map);
   map.on("click",onMapClick);
+  setTimeout(()=>map.invalidateSize(),0);
+  new ResizeObserver(()=>map.invalidateSize()).observe(document.getElementById("map"));
+}
+
+function normalizeLongitude(lng){
+  return ((Number(lng)+180)%360+360)%360-180;
 }
 
 function toggleSatellite(){
@@ -681,12 +688,14 @@ function toggleSatellite(){
 }
 
 function onMapClick(e){
-  if(currentTool==="area"){onAreaClick(e.latlng.lat,e.latlng.lng);return;}
-  if(currentTool==="pin") placePin(e.latlng.lat,e.latlng.lng);
-  else addPolyPoint(e.latlng);
+  const point={lat:Number(e.latlng.lat),lng:normalizeLongitude(e.latlng.lng)};
+  if(currentTool==="area"){onAreaClick(point.lat,point.lng);return;}
+  if(currentTool==="pin") placePin(point.lat,point.lng);
+  else addPolyPoint(point);
 }
 
 function placePin(lat,lng,nombre=""){
+  lng=normalizeLongitude(lng);
   if(marker)map.removeLayer(marker);
   if(polygon){map.removeLayer(polygon);polygon=null;}
   measureMarkers.forEach(item=>map.removeLayer(item));measureMarkers=[];polyPoints=[];selArea=0;
@@ -711,7 +720,7 @@ function addPolyPoint(ll){
     const clng=polyPoints.reduce((s,p)=>s+p.lng,0)/polyPoints.length;
     selLat=clat; selLng=clng; selNombre=`Área personalizada (${polyPoints.length} puntos)`;
     updateZonaInfo(clat,clng);
-    document.getElementById("btnAnalyze").disabled=false;
+    document.getElementById("btnAnalyze").disabled=polyPoints.length<3;
   }
   updateMeasurement();
 }
@@ -747,17 +756,29 @@ function calculateMeasurement(points){
   return {areaM2,areaHa:areaM2/10000,perimeterM:perimeter};
 }
 
-function updateMeasurement(){
-  const measurement=calculateMeasurement(polyPoints);
+function updateMeasurement(points=polyPoints){
+  const measurement=calculateMeasurement(points);
   selArea=measurement.areaHa;
   document.getElementById("measureHa").textContent=measurement.areaHa.toFixed(3);
   document.getElementById("measureM2").textContent=Math.round(measurement.areaM2).toLocaleString("es-MX");
   document.getElementById("measurePerimeter").textContent=Math.round(measurement.perimeterM).toLocaleString("es-MX");
-  document.getElementById("toolHint").textContent=polyPoints.length<3?`${polyPoints.length} punto(s) · agrega al menos 3 para calcular área`:`${polyPoints.length} puntos · ${measurement.areaHa.toFixed(3)} ha`;
+  document.getElementById("toolHint").textContent=points.length<3?`${points.length} punto(s) · agrega al menos 3 para calcular área`:`${points.length} puntos · ${measurement.areaHa.toFixed(3)} ha`;
   return measurement;
 }
 
 function undoMeasurePoint(){
+  if(currentTool==="area"){
+    if(!areaPoints.length)return;
+    areaPoints.pop();
+    const removedArea=areaMarkers.pop();
+    if(removedArea)map.removeLayer(removedArea);
+    if(areaPolygon)map.removeLayer(areaPolygon);
+    areaPolygon=areaPoints.length>1?L.polygon(areaPoints,{color:"#84cc16",weight:2,fillColor:"#84cc16",fillOpacity:.15}).addTo(map):null;
+    const points=areaPoints.map(([lat,lng])=>({lat,lng}));
+    updateMeasurement(points);
+    document.getElementById("btnAnalyze").disabled=points.length<3;
+    return;
+  }
   if(!polyPoints.length)return;
   polyPoints.pop();
   const removed=measureMarkers.pop();
@@ -769,15 +790,18 @@ function undoMeasurePoint(){
 }
 
 function saveMeasurementDraft(){
-  if(polyPoints.length<3){showFieldToast("Agrega al menos 3 puntos para guardar el área.");return;}
-  const metrics=updateMeasurement();
-  lastMeasurement={...metrics,points:polyPoints.map(({lat,lng})=>({lat,lng})),savedAt:new Date().toISOString()};
+  const points=currentTool==="area"?areaPoints.map(([lat,lng])=>({lat,lng})):polyPoints.map(({lat,lng})=>({lat,lng}));
+  if(points.length<3){showFieldToast("Agrega al menos 3 puntos para guardar el área.");return;}
+  const metrics=updateMeasurement(points);
+  lastMeasurement={...metrics,points,savedAt:new Date().toISOString()};
   localStorage.setItem(FIELD_MEASUREMENT_KEY,JSON.stringify(lastMeasurement));
   showFieldToast(`Medición guardada: ${metrics.areaHa.toFixed(3)} ha`);
   updateDiagnosisContext();
 }
 
 async function updateZonaInfo(lat,lng){
+  lat=Number(lat);lng=normalizeLongitude(lng);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90)return;
   document.getElementById("zonaInfo").style.display="flex";
   document.getElementById("infoLat").textContent=lat.toFixed(5);
   document.getElementById("infoLng").textContent=Math.abs(lng).toFixed(5);
@@ -804,6 +828,8 @@ function setTool(t){
   const hints={pin:"Haz clic en el mapa para seleccionar un punto",poly:"Toca el mapa para agregar puntos numerados al perímetro.",area:"Clic para agregar vértices del predio — doble clic para cerrar el polígono"};
   document.getElementById("toolHint").textContent=hints[t]||hints.pin;
   if(t==="poly"){
+    areaMarkers.forEach(item=>map.removeLayer(item));areaMarkers=[];areaPoints=[];
+    if(areaPolygon){map.removeLayer(areaPolygon);areaPolygon=null;}
     measurementPanel.classList.add("on");
     zonaInfo.style.display="flex";
     updateMeasurement();
@@ -815,10 +841,16 @@ function setTool(t){
     map.invalidateSize();
   }
   if(t==="area"){
-    // Limpiar área anterior
+    measureMarkers.forEach(item=>map.removeLayer(item));measureMarkers=[];polyPoints=[];
+    if(polygon){map.removeLayer(polygon);polygon=null;}
     areaPoints=[];
     areaMarkers.forEach(m=>map.removeLayer(m)); areaMarkers=[];
     if(areaPolygon){map.removeLayer(areaPolygon);areaPolygon=null;}
+    measurementPanel.classList.add("on");
+    zonaInfo.style.display="flex";
+    updateMeasurement([]);
+    document.getElementById("btnAnalyze").disabled=true;
+    map.invalidateSize();
     map.on("dblclick",closeAreaPolygon);
   } else {
     map.off("dblclick",closeAreaPolygon);
@@ -826,6 +858,7 @@ function setTool(t){
 }
 
 function onAreaClick(lat,lng){
+  lng=normalizeLongitude(lng);
   areaPoints.push([lat,lng]);
   const m=L.circleMarker([lat,lng],{radius:5,color:"#84cc16",fillColor:"#84cc16",fillOpacity:1}).addTo(map);
   areaMarkers.push(m);
@@ -833,7 +866,16 @@ function onAreaClick(lat,lng){
   if(areaPoints.length>=3){
     areaPolygon=L.polygon(areaPoints,{color:"#84cc16",weight:2,fillColor:"#84cc16",fillOpacity:0.15}).addTo(map);
   }
-  document.getElementById("toolHint").textContent=`Polígono: ${areaPoints.length} puntos — doble clic para cerrar`;
+  const points=areaPoints.map(([pointLat,pointLng])=>({lat:pointLat,lng:pointLng}));
+  const metrics=updateMeasurement(points);
+  if(points.length>=2){
+    selLat=points.reduce((sum,point)=>sum+point.lat,0)/points.length;
+    selLng=normalizeLongitude(points.reduce((sum,point)=>sum+point.lng,0)/points.length);
+    selNombre=`Área personalizada (${points.length} puntos)`;
+    updateZonaInfo(selLat,selLng);
+  }
+  document.getElementById("btnAnalyze").disabled=points.length<3;
+  document.getElementById("toolHint").textContent=points.length<3?`Polígono: ${points.length} punto(s) — agrega al menos 3`:`Polígono: ${points.length} puntos · ${metrics.areaHa.toFixed(3)} ha — doble clic para cerrar`;
 }
 
 function closeAreaPolygon(e){
@@ -842,36 +884,23 @@ function closeAreaPolygon(e){
   // Centroide
   const lat=areaPoints.reduce((s,p)=>s+p[0],0)/areaPoints.length;
   const lng=areaPoints.reduce((s,p)=>s+p[1],0)/areaPoints.length;
-  // Área (Shoelace en metros)
-  const R=6371000;
-  let area=0;
-  for(let i=0;i<areaPoints.length;i++){
-    const j=(i+1)%areaPoints.length;
-    const xi=areaPoints[i][1]*Math.PI/180*R*Math.cos(areaPoints[i][0]*Math.PI/180);
-    const yi=areaPoints[i][0]*Math.PI/180*R;
-    const xj=areaPoints[j][1]*Math.PI/180*R*Math.cos(areaPoints[j][0]*Math.PI/180);
-    const yj=areaPoints[j][0]*Math.PI/180*R;
-    area+=xi*yj-xj*yi;
-  }
-  const ha=+(Math.abs(area/2)/10000).toFixed(3);
+  const points=areaPoints.map(([pointLat,pointLng])=>({lat:pointLat,lng:normalizeLongitude(pointLng)}));
+  const metrics=calculateMeasurement(points);
+  const ha=metrics.areaHa;
+  const perim=metrics.perimeterM;
+  polyPoints=points;
   selArea=ha;
-  // Mostrar en el panel de medición
-  polyPoints=areaPoints.map(p=>({lat:p[0],lng:p[1]}));
-  document.getElementById("measurementPanel").classList.add("on");
-  document.getElementById("measureHa").textContent=ha.toFixed(3);
-  document.getElementById("measureM2").textContent=Math.round(ha*10000).toLocaleString("es-MX");
-  // Perímetro
-  let perim=0;
-  for(let i=0;i<areaPoints.length;i++){
-    const j=(i+1)%areaPoints.length;
-    perim+=haversineMeters({lat:areaPoints[i][0],lng:areaPoints[i][1]},{lat:areaPoints[j][0],lng:areaPoints[j][1]});
-  }
-  document.getElementById("measurePerimeter").textContent=Math.round(perim).toLocaleString("es-MX");
+  lastMeasurement={...metrics,points,savedAt:new Date().toISOString(),source:"area_polygon"};
+  localStorage.setItem(FIELD_MEASUREMENT_KEY,JSON.stringify(lastMeasurement));
   document.getElementById("measurementPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
   // Pin en centroide
   placePin(lat,lng,selNombre||`Predio ${ha} ha`);
-  document.getElementById("toolHint").textContent=`✓ Polígono cerrado — ${ha} ha · ${Math.round(ha*10000).toLocaleString("es-MX")} m² · ${Math.round(perim).toLocaleString("es-MX")} m perímetro`;
+  polyPoints=points;
+  selArea=ha;
+  document.getElementById("measurementPanel").classList.add("on");
+  updateMeasurement(points);
   setTool("pin");
+  document.getElementById("toolHint").textContent=`✓ Polígono cerrado — ${ha.toFixed(3)} ha · ${Math.round(metrics.areaM2).toLocaleString("es-MX")} m² · ${Math.round(perim).toLocaleString("es-MX")} m perímetro`;
 }
 
 function clearAll(){
@@ -1473,7 +1502,12 @@ function showResults(){
 }
 
 async function runAnalysis(){
-  if(!selLat||!selLng)return;
+  const analysisLat=Number(selLat),analysisLng=normalizeLongitude(selLng);
+  if(!Number.isFinite(analysisLat)||analysisLat < -90||analysisLat > 90||!Number.isFinite(analysisLng)){
+    showFieldToast("Selecciona una ubicación válida antes de analizar.");
+    return;
+  }
+  selLat=analysisLat;selLng=analysisLng;
   document.getElementById("btnAnalyze").disabled=true;
   showLoading();
 

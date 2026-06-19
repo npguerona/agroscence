@@ -16,12 +16,19 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
 const PORT = Number(process.env.PORT || 3000);
 const JWT_SECRET = process.env.JWT_SECRET || "agrosense-local-dev-secret-change-me";
+const ALLOWED_ORIGINS = (process.env.FRONTEND_URL || "").split(",").map(origin => origin.trim()).filter(Boolean);
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 const app = express();
 app.use(cors({
-  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : true,
+  origin(origin, callback) {
+    const allowed = !origin || origin === "null" || !ALLOWED_ORIGINS.length || ALLOWED_ORIGINS.includes(origin);
+    if (allowed) return callback(null, true);
+    const error = new Error("Origen no permitido por CORS");
+    error.status = 403;
+    callback(error);
+  },
   credentials: true
 }));
 app.use(express.json({ limit: "2mb" }));
@@ -309,7 +316,7 @@ app.get("*", (_req, res) => res.sendFile(path.join(PROJECT_ROOT, "frontend", "ag
 
 app.use((error, _req, res, _next) => {
   console.error(error);
-  if (!res.headersSent) fail(res, 500, error.message || "Error interno del servidor");
+  if (!res.headersSent) fail(res, error.status || 500, error.message || "Error interno del servidor");
 });
 
 app.listen(PORT, () => console.log(`AgroSense listo en http://localhost:${PORT}`));
