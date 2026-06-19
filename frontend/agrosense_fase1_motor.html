@@ -129,7 +129,8 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
 .zchip strong{color:var(--lime)}
 
 /* RESULTADOS DEBAJO DEL MAPA */
-	.right-panel{display:block;background:var(--bg);border-top:1px solid var(--border)}
+	.right-panel{display:block;width:70%;align-self:center;background:var(--bg);border-top:1px solid var(--border)}
+@media(max-width:800px){.right-panel{width:100%}}
 
 /* ESTADO INICIAL */
 .idle-state{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);color:var(--muted)}
