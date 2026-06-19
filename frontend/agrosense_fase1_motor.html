@@ -266,9 +266,9 @@ body{background:var(--bg);color:var(--white);font-family:var(--font);min-height:
       <div class="logo-sub">Motor Fase 1 · Datos en tiempo real</div>
     </div>
   </div>
-  <a href="/dashboard" style="text-decoration:none;background:var(--lime);color:#06130a;font-weight:700;font-size:13px;padding:7px 16px;border-radius:8px;white-space:nowrap">📊 Dashboard</a>
+  <a href="/dashboard" onclick="navigateApp(event,'/dashboard')" style="text-decoration:none;background:var(--lime);color:#06130a;font-weight:700;font-size:13px;padding:7px 16px;border-radius:8px;white-space:nowrap">📊 Dashboard</a>
   <div class="api-status" id="apiStatus">
-    <a class="api-pill api-ok" href="/" style="text-decoration:none">Inicio</a>
+    <a class="api-pill api-ok" href="/" onclick="navigateApp(event,'/')" style="text-decoration:none">Inicio</a>
     <span class="api-pill api-wait" id="pill-geo">Geocoding</span>
     <span class="api-pill api-wait" id="pill-fore">Forecast</span>
     <span class="api-pill api-wait" id="pill-arch">Histórico</span>
@@ -516,6 +516,30 @@ const PUBLIC_API_ORIGIN = "https://agroscence.cyberbotlabs.io";
 const API_BASE = window.location.protocol === "file:"
   ? PUBLIC_API_ORIGIN
   : window.location.origin;
+
+async function navigateApp(event,path){
+  event?.preventDefault();
+  const publicUrl=`${PUBLIC_API_ORIGIN}${path}`;
+  if(window.location.protocol==="file:"){
+    window.location.assign(publicUrl);
+    return;
+  }
+  const isLocal=["localhost","127.0.0.1"].includes(window.location.hostname);
+  if(!isLocal){
+    window.location.assign(path);
+    return;
+  }
+  try{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),1500);
+    const response=await fetch(`${window.location.origin}/api/v2/health`,{cache:"no-store",signal:controller.signal});
+    clearTimeout(timeout);
+    if(!response.ok)throw new Error("Servidor local no disponible");
+    window.location.assign(path);
+  }catch{
+    window.location.assign(publicUrl);
+  }
+}
 const APIS = {
   geocoding: "https://geocoding-api.open-meteo.com/v1/search",
   forecast:  "https://api.open-meteo.com/v1/forecast",
@@ -1877,7 +1901,7 @@ async function doSaveParcela(){
 
     msg.className="save-msg ok";
     msg.innerHTML=`✓ <strong>"${nombre}"</strong> guardada${cultivoId?" con ciclo iniciado":""}. `+
-      `<a href="/dashboard" style="color:var(--lime);font-weight:700">Ver en Dashboard →</a>`;
+      `<a href="/dashboard" onclick="navigateApp(event,'/dashboard')" style="color:var(--lime);font-weight:700">Ver en Dashboard →</a>`;
     btn.textContent="¡Listo!";
 
   }catch(e){
